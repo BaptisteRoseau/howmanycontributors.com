@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -e
+cargo clippy
+(cd crates/frontend; wasm-pack test  --headless --firefox --bin frontend)
+cargo llvm-cov --color always --no-fail-fast --show-missing-lines --ignore-filename-regex='crates/frontend/src/(hooks/|assets/|components/|pages/|themes/)|/models/'
+cargo deny check --allow duplicate --allow unlicensed
+cargo audit

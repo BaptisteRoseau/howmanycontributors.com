@@ -1,0 +1,12 @@
+*.lock
+.$*.bkp
+.git/
+.vscode/
+src/backend/target/
+src/frontend/dist/
+target/
+src/frontend-bk/
+dist/
+crates/frontend/dist
+GrafanaDashboard.json
+public

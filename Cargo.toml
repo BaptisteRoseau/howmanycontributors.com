@@ -1,0 +1,18 @@
+[workspace]
+resolver = "1"
+members = [
+    "crates/backend",
+    "crates/frontend",
+    "crates/http_health_checker",
+]
+
+[profile.release]
+lto = true
+strip = true
+
+[profile.release.package."frontend"]
+codegen-units = 1
+debug = false
+incremental = false
+inherits = "release"
+opt-level = "z"

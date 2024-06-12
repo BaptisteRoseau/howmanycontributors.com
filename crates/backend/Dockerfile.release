@@ -1,0 +1,39 @@
+FROM rust:1.77 as BUILDER
+
+ARG target=x86_64-unknown-linux-gnu
+
+WORKDIR /build
+RUN touch /opt/config.yml
+COPY crates/ ./crates/
+COPY Cargo.toml ./Cargo.toml
+
+# TODO: Find a way to cache dependencies download and compilation
+RUN RUSTFLAGS='-C target-feature=+crt-static' \
+    cargo build \
+    --release \
+    --target $target \
+    --bin backend \
+    --bin http_health_checker && \
+    mv target/$target/release/backend /opt/backend && \
+    chmod 555 /opt/backend && \
+    mv target/$target/release/http_health_checker /opt/http_health_checker && \
+    chmod 555 /opt/http_health_checker
+
+FROM scratch
+
+COPY --from=BUILDER /opt/backend /backend
+COPY --from=BUILDER /opt/http_health_checker /http_health_checker
+COPY --from=BUILDER /opt/config.yml /etc/backend/config.yml
+USER 10001
+WORKDIR /
+EXPOSE 24316
+HEALTHCHECK \
+    --start-period=5s \
+    --interval=10s \
+    --timeout=10s \
+    --retries=3 \
+    CMD [ "/http_health_checker", "http://127.0.0.1:24316/" ]
+ENTRYPOINT [ "/backend", "--port", "24316" ]
+CMD [ "--config", "/etc/backend/config.yml", \
+    "--pem-priv-key", "/etc/backend/key.pem" \
+    "--pem-pub-key", "/etc/backend/cert.pem" ]

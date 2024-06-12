@@ -1,0 +1,26 @@
+[package]
+name = "frontend"
+version = "0.1.0"
+authors = ["Baptiste Roseau <broseau@gmail.com>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+chrono = { version = "0", features = ["serde"] }
+dioxus = { version = "0", features = ["web", "router"] }
+dioxus-logger = "0"
+dotenvy_macro = { version = "0" }
+gloo = "0"
+lazy_static = "1"
+log = "0"
+parking_lot = "0"
+reqwest = { version = "0", features = ["json"] }
+serde = "1"
+thiserror = "1"
+tracing = "0"
+web-sys = { version = "0", features = ["Window", "DomTokenList", "Element", "MediaQueryList"] }
+anyhow = "1"
+
+[dev-dependencies]
+wasm-bindgen-test = { version = "0" }

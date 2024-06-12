@@ -1,0 +1,99 @@
+---
+# This docker compose file is intended for development purposes and not for
+# production use.
+version: "3"
+
+services:
+  database:
+    image: postgres:16.2
+    container_name: hmc-postgres
+    networks:
+      - hmc
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      BACKEND_USER: backend
+      BACKEND_PASSWORD: password
+      GRAFANA_USER: grafana
+      GRAFANA_PASSWORD: password
+      PGDATA: /var/lib/postgresql/data/pgdata
+      POSTGRES_HOST_AUTH_METHOD: trust # You should specify the mode and IP range in production
+    ports:
+      - "5432:5432"
+    restart: on-failure
+    volumes:
+      - "hmc-postgres:/var/lib/postgresql/data"
+      - "./database:/docker-entrypoint-initdb.d/"
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: hmc-grafana
+    networks:
+      - hmc
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    ports:
+      - "3000:3000"
+    restart: on-failure
+    volumes:
+      - "hmc-grafana:/var/lib/grafana"
+
+  prometheus:
+    image: prom/prometheus:v2.51.2
+    container_name: hmc-prometheus
+    networks:
+      - hmc
+    ports:
+      - "9090:9090"
+    restart: on-failure
+    volumes:
+      - "hmc-prometheus:/prometheus"
+      - ./manifests/prometheus:/etc/prometheus
+
+  backend:
+    image: localhost/hmc-backend:latest-debug
+    build:
+      context: .
+      dockerfile: crates/backend/Dockerfile.debug
+      tags:
+        - "localhost/hmc-backend:latest-debug"
+    container_name: hmc-backend
+    environment:
+      IP: 0.0.0.0
+      PROMETHEUS_IP: 0.0.0.0
+      SWAGGER_IP: 0.0.0.0
+      DEBUG: true
+    networks:
+      - hmc
+    ports:
+      - "8090:24316"
+      - "8091:7070"
+      - "8092:9090"
+    restart: on-failure
+    volumes:
+      - ".:/src"
+
+  frontend:
+    image: localhost/hmc-frontend:latest-debug
+    build:
+      context: .
+      dockerfile: crates/frontend/Dockerfile.debug
+      tags:
+        - "localhost/hmc-frontend:latest-debug"
+    container_name: hmc-frontend
+    environment:
+      - API_ROOT=http://127.0.0.1:8090/
+    ports:
+      - "8080:8080"
+    restart: on-failure
+    volumes:
+      - ".:/src"
+
+networks:
+  hmc:
+
+volumes:
+  hmc-postgres:
+  hmc-grafana:
+  hmc-prometheus:

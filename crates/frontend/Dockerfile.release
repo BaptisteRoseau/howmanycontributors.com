@@ -1,0 +1,58 @@
+FROM rust:1.77 as BUILDER
+
+ARG target=x86_64-unknown-linux-gnu
+#FIXME: Do not use dotenv at compilation but at runtime instead
+ARG api_root="http://127.0.0.1:8090"
+
+RUN cargo install dioxus-cli && \
+    RUSTFLAGS='-C target-feature=+crt-static' cargo install miniserve --root /opt/ --target $target
+
+WORKDIR /build
+
+COPY crates/ ./crates/
+COPY Cargo.toml ./Cargo.toml
+
+RUN RUSTFLAGS='-C target-feature=+crt-static' \
+    cargo build \
+    --release \
+    --target $target \
+    --bin http_health_checker
+
+RUN API_ROOT=$api_root RUSTFLAGS='-C target-feature=+crt-static' \
+    dx build \
+    --release \
+    --target $target \
+    --bin frontend
+
+RUN chmod 444 $(find crates/frontend/dist/* -type f) && \
+    chmod 111 $(find crates/frontend/dist/* -type d) && \
+    mv crates/frontend/dist/ /opt/dist && \
+    mv target/$target/release/http_health_checker /opt/http_health_checker && \
+    chmod 555 /opt/http_health_checker
+
+WORKDIR /build/crates/frontend
+
+RUN apt update && \
+    apt install -y npm && \
+    npm install -g tailwindcss && \
+    npx tailwindcss -i ./input.css -o /opt/dist/tailwind.css --minify
+
+FROM scratch
+
+COPY --from=BUILDER /opt/dist /dist
+COPY --from=BUILDER /opt/http_health_checker /http_health_checker
+COPY --from=BUILDER /opt/bin/miniserve /bin/miniserve
+
+USER 10001
+WORKDIR /dist
+EXPOSE 23669
+HEALTHCHECK \
+    --start-period=5s \
+    --interval=10s \
+    --timeout=10s \
+    --retries=3 \
+    CMD [ "/http_health_checker", "http://127.0.0.1:23669/" ]
+ENTRYPOINT ["/bin/miniserve", "--index", "index.html", "--spa", \
+    "--disable-indexing", "--hide-theme-selector", "--hide-version-footer", \
+    "-i", "0.0.0.0", "-p", "23669"]
+# CMD ["--tls-key", "TODO", "--tls-cert", "TODO"]

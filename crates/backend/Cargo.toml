@@ -1,0 +1,46 @@
+[package]
+name = "backend"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive", "env"] }
+log = "0"
+serde = { version = "1", features = ["derive"] }
+serde_yaml = "0"
+thiserror = "1"
+env_logger = "0"
+serde_json = "1"
+tokio = { version = "1.36", features = ["rt-multi-thread", "macros", "full"] }
+uuid = { version = "1.7", features = ["fast-rng", "serde", "v4"] }
+axum = { version = "0", features = ["http1", "http2"] }
+axum-macros = "0"
+tower-http = { version = "0", features = [
+    "compression-gzip",
+    "decompression-gzip",
+    "trace",
+    "timeout",
+    "auth",
+    "uuid",
+    "cors",
+    "tokio",
+    "sensitive-headers",
+    "set-header",
+    "normalize-path",
+] }
+tower = { version = "0" }
+tokio-postgres = { version = "0", features = [
+    "with-uuid-1",
+    "with-serde_json-1",
+    "with-chrono-0_4",
+    "with-time-0_3",
+    "with-bit-vec-0_6",
+] }
+chrono = { version = "0" }
+jsonwebtoken = { version = "9", features = ["use_pem"] }
+deadpool-postgres = { version = "*" }
+regex = { version = "*" }
+metrics = { version = "0.22" }
+metrics-exporter-prometheus = { version = "0.14", features = ["tokio"] }
+axum-prometheus ={ version = "*", features = ["metrics-exporter-prometheus"]}
