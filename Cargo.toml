@@ -3,6 +3,7 @@ resolver = "1"
 members = [
     "crates/backend",
     "crates/frontend",
+    "crates/github_scrapper",
     "crates/http_health_checker",
 ]
 

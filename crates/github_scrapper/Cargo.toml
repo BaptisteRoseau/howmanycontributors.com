@@ -1,0 +1,19 @@
+[package]
+name = "github_scrapper"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+async-recursion = "1"
+lazy_static = "1"
+regex = "1"
+reqwest = { version = "0", features = ["json"] }
+scraper = "0"
+serde = { version = "1", features = ["derive"] }
+thiserror = "*"
+tokio = "1"
+tokio-stream = "0"
+tracing = "0"
+tracing-subscriber = "0"

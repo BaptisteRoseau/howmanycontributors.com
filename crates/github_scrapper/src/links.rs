@@ -1,0 +1,106 @@
+use lazy_static::lazy_static;
+use regex::Regex;
+use scraper::{Html, Selector};
+
+use crate::utils::fetch_page;
+use crate::{errors::GitHubError, GitHubLinkDependencies};
+
+lazy_static! {
+    static ref LINK_PATTERN: Regex =
+        Regex::new(r#"https://github.com/([a-zA-Z0-9_\.-]+)/([a-zA-Z0-9_\.-]+)"#).unwrap();
+    static ref SPAN_SELECTOR: Selector = Selector::parse("span").unwrap();
+}
+
+/// A link to a GitHub repository.
+///
+/// Contains information about the repository owner and name.
+///
+/// Its dependencies can be fetched using the [`dependencies`] method to create
+/// a [`GitHubLinkDependencies`] object.
+///
+/// [`dependencies`]: GitHubLink::dependencies
+#[derive(Debug, Clone, PartialEq, PartialOrd, Eq, Hash)]
+pub struct GitHubLink {
+    link: String,
+    owner: String,
+    repo: String,
+}
+
+impl std::fmt::Display for GitHubLink {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.path())
+    }
+}
+
+impl TryFrom<String> for GitHubLink {
+    type Error = GitHubError;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        if let Some(captures) = LINK_PATTERN.captures(&value.clone()) {
+            return Ok(Self {
+                link: value,
+                owner: captures[1].to_string(),
+                repo: captures[2].to_string(),
+            });
+        }
+        Err(GitHubError::InvalidLink(value))
+    }
+}
+
+impl GitHubLink {
+    /// The GitHub Link in the form https://github.com/OWNER/REPO
+    pub fn link(&self) -> &str {
+        &self.link
+    }
+
+    /// The GitHub repository owner, taken from the repo link
+    pub fn owner(&self) -> &str {
+        &self.owner
+    }
+
+    /// The GitHub repository name, taken from the repo link
+    pub fn repo(&self) -> &str {
+        &self.repo
+    }
+
+    /// The path of the GitHub repository, in the form OWNER/REPO
+    pub fn path(&self) -> String {
+        format!("{}/{}", &self.owner, &self.repo)
+    }
+
+    /// The number of contributors displayed on the right side
+    /// of the main page.
+    pub async fn fetch_contributors(&self) -> Result<usize, GitHubError> {
+        let html = self.fetch_main_page().await?;
+        self.get_contributors_from_html(&html)
+    }
+
+    /// The dependencies of the repo, found in the
+    /// "Insight -> Dependency Graph" page.
+    pub fn dependencies(&self) -> GitHubLinkDependencies {
+        GitHubLinkDependencies::new(self.clone())
+    }
+
+    async fn fetch_main_page(&self) -> Result<Html, GitHubError> {
+        fetch_page(self.link()).await
+    }
+
+    fn get_contributors_from_html(&self, html: &Html) -> Result<usize, GitHubError> {
+        let a_selector =
+            Selector::parse(format!(r#"a[href="/{}/graphs/contributors"]"#, self.path()).as_str())
+                .unwrap();
+
+        let Some(component) = html.select(&a_selector).next() else {
+            return Err(GitHubError::NoContributorsComponent(self.link.clone()));
+        };
+        let Some(span) = component.select(&SPAN_SELECTOR).next() else {
+            return Err(GitHubError::NoContributorsComponent(self.link.clone()));
+        };
+        let contributors = span.text().collect::<String>().parse::<usize>();
+        if contributors.is_err() {
+            return Err(GitHubError::NoContributorsComponent(self.link.clone()));
+        }
+
+        Ok(contributors.unwrap())
+    }
+}
