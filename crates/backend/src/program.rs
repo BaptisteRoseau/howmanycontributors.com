@@ -2,16 +2,15 @@ use crate::api::routes::{public_routes, try_metrics_routes};
 use crate::api::state::AppState;
 use crate::config::Config;
 use crate::cache::Cache;
-use crate::logging::init_logger;
 use anyhow::Error;
 use axum::Router;
 use axum_prometheus::PrometheusMetricLayerBuilder;
-use log::info;
+use tracing::info;
 use tokio::net::{TcpListener, ToSocketAddrs};
 use tokio::task::JoinHandle;
 
 pub(crate) async fn run(config: &Config) -> Result<(), anyhow::Error> {
-    init_logger(config.debug);
+    tracing_subscriber::fmt::init();
     info!("Initializing Database...");
     let cache = Cache::try_from(config)?;
     cache.init(config).await?;

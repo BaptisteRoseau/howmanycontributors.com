@@ -14,7 +14,7 @@ env_logger = "0"
 serde_json = "1"
 tokio = { version = "1.36", features = ["rt-multi-thread", "macros", "full"] }
 uuid = { version = "1.7", features = ["fast-rng", "serde", "v4"] }
-axum = { version = "0", features = ["http1", "http2"] }
+axum = { version = "0", features = ["http1", "http2", "ws"] }
 axum-macros = "0"
 tower-http = { version = "0", features = [
     "compression-gzip",
@@ -29,7 +29,8 @@ tower-http = { version = "0", features = [
     "set-header",
     "normalize-path",
 ] }
-tower = { version = "0" }
+tower = { version = "0", features = ["buffer"] }
+tower_governor = { version = "0", features = ["axum", "tracing"] }
 tokio-postgres = { version = "0", features = [
     "with-uuid-1",
     "with-serde_json-1",
@@ -41,6 +42,10 @@ chrono = { version = "0" }
 jsonwebtoken = { version = "9", features = ["use_pem"] }
 deadpool-postgres = { version = "*" }
 regex = { version = "*" }
-metrics = { version = "0.22" }
-metrics-exporter-prometheus = { version = "0.14", features = ["tokio"] }
-axum-prometheus ={ version = "*", features = ["metrics-exporter-prometheus"]}
+metrics = { version = "0" }
+metrics-exporter-prometheus = { version = "0", features = ["tokio"] }
+axum-prometheus = { version = "*", features = ["metrics-exporter-prometheus"] }
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing = "*"
+github_scrapper = { path = "../github_scrapper" }
+async-recursion = "1"

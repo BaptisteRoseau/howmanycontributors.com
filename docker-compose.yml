@@ -4,9 +4,9 @@
 version: "3"
 
 services:
-  database:
-    image: postgres:16.2
-    container_name: hmc-postgres
+  cache:
+    image: redis:7.2.5
+    container_name: hmc-redis
     networks:
       - hmc
     environment:
@@ -20,10 +20,7 @@ services:
       POSTGRES_HOST_AUTH_METHOD: trust # You should specify the mode and IP range in production
     ports:
       - "5432:5432"
-    restart: on-failure
-    volumes:
-      - "hmc-postgres:/var/lib/postgresql/data"
-      - "./database:/docker-entrypoint-initdb.d/"
+    restart: always
 
   grafana:
     image: grafana/grafana:10.4.2

@@ -2,7 +2,6 @@ mod api;
 mod config;
 mod cache;
 mod errors;
-mod logging;
 mod models;
 mod program;
 use std::process::exit;

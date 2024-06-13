@@ -1,6 +1,5 @@
 use crate::cache::errors::CacheError;
 use axum::{http::StatusCode, response::IntoResponse};
-use jsonwebtoken::errors::ErrorKind as JwtErrorKind;
 use log::error;
 use serde::Serialize;
 use thiserror::Error;
@@ -37,11 +36,6 @@ impl ApiErrorResponse {
             "An unexpected error occurred.",
             StatusCode::INTERNAL_SERVER_ERROR,
         )
-    }
-
-    // Template for forbidden responses
-    fn forbidden() -> Self {
-        Self::new("FORBIDDEN", "", StatusCode::FORBIDDEN)
     }
 }
 
@@ -95,23 +89,6 @@ impl From<CacheError> for ApiErrorResponse {
 impl From<anyhow::Error> for ApiErrorResponse {
     fn from(_val: anyhow::Error) -> Self {
         ApiErrorResponse::unexpected()
-    }
-}
-
-impl From<jsonwebtoken::errors::Error> for ApiErrorResponse {
-    fn from(val: jsonwebtoken::errors::Error) -> Self {
-        match val.kind() {
-            JwtErrorKind::InvalidToken
-            | JwtErrorKind::InvalidSubject
-            | JwtErrorKind::InvalidIssuer
-            | JwtErrorKind::InvalidSignature => ApiErrorResponse::forbidden(),
-            JwtErrorKind::ExpiredSignature => ApiErrorResponse::new(
-                "TOKEN_EXPIRED",
-                "Your authentication token has expired. Please log back in.",
-                StatusCode::UNAUTHORIZED,
-            ),
-            _ => ApiErrorResponse::unexpected(),
-        }
     }
 }
 

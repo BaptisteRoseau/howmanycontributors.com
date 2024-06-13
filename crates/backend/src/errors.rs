@@ -13,8 +13,4 @@ pub(crate) enum ConfigParsingError {
 
     #[error("Config has an invalid YAML format")]
     Parsing(#[from] serde_yaml::Error),
-
-    #[cfg(not(debug_assertions))]
-    #[error("Default password salt cannot be used in release mode. Please set up the PASSWORD_SALT environment variable.")]
-    DefaultPasswordSaltInReleaseMode,
 }

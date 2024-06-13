@@ -1,4 +1,4 @@
 mod errors;
-mod misc;
+mod endpoints;
 pub mod routes;
 pub mod state;

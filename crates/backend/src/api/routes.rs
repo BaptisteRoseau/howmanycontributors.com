@@ -1,33 +1,37 @@
-use crate::{api::misc::ping, api::state::AppState};
+use crate::{api::endpoints::ping, api::state::AppState};
 
-use axum::http::header::AUTHORIZATION;
 use axum::{routing::get, Router};
 use axum_prometheus::metrics_exporter_prometheus::PrometheusHandle;
 use std::time::Duration;
-use std::{future::ready, iter::once};
+use std::{future::ready, sync::Arc};
 use tower::ServiceBuilder;
+use tower_governor::{governor::GovernorConfigBuilder, GovernorLayer};
 use tower_http::{
-    compression::CompressionLayer,
-    cors::CorsLayer,
-    decompression::RequestDecompressionLayer,
-    normalize_path::NormalizePathLayer,
-    sensitive_headers::{SetSensitiveRequestHeadersLayer, SetSensitiveResponseHeadersLayer},
-    timeout::TimeoutLayer,
-    trace::TraceLayer,
-    CompressionLevel,
+    compression::CompressionLayer, cors::CorsLayer, decompression::RequestDecompressionLayer,
+    normalize_path::NormalizePathLayer, timeout::TimeoutLayer, trace::TraceLayer, CompressionLevel,
 };
+
+use super::endpoints::ws_handler_dependencies;
 
 const TIMEOUT_SEC: u64 = 20;
 
 /// Public routes that qre exposed to the world
 pub(crate) fn public_routes(app_state: &AppState) -> Router {
-    let open_routes = Router::new();
-    // .route("/test", get(|| StatusCode::INTERNAL_SERVER_ERROR));
+    let governor_conf = Arc::new(
+        GovernorConfigBuilder::default()
+            .use_headers()
+            .finish()
+            .unwrap(),
+    );
+    let governor_limiter = governor_conf.limiter().clone();
+    let interval = Duration::from_secs(60);
+    std::thread::spawn(move || loop {
+        std::thread::sleep(interval);
+        tracing::info!("Rate limiting storage size: {}", governor_limiter.len());
+        governor_limiter.retain_recent();
+    });
 
     let middleware_service = ServiceBuilder::new()
-        // Avoid logging these headers content
-        .layer(SetSensitiveRequestHeadersLayer::new(once(AUTHORIZATION)))
-        .layer(SetSensitiveResponseHeadersLayer::new(once(AUTHORIZATION)))
         // Add logging from axum
         .layer(TraceLayer::new_for_http())
         // Authorize OPTIONS requests for CORS and automatically set up headers
@@ -38,11 +42,15 @@ pub(crate) fn public_routes(app_state: &AppState) -> Router {
         // .layer(CompressionLayer::new().quality(CompressionLevel::Best))
         .layer(CompressionLayer::new().quality(CompressionLevel::Best))
         .layer(RequestDecompressionLayer::new())
+        // Rate Limiting per IP
+        .layer(GovernorLayer {
+            config: governor_conf,
+        })
         .layer(TimeoutLayer::new(Duration::from_secs(TIMEOUT_SEC)));
 
     Router::new()
         .route("/", get(ping))
-        .nest("/v1", open_routes)
+        .route("/dependencies", get(ws_handler_dependencies))
         .layer(middleware_service)
         .with_state(app_state.clone())
 }

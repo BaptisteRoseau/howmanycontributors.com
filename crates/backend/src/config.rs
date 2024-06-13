@@ -46,10 +46,6 @@ struct CliConfig {
     #[arg(short, long, env)]
     pub(crate) config: Option<PathBuf>,
 
-    /// Enable debug logging
-    #[arg(long, env, default_value_t = false)]
-    pub(crate) debug: bool,
-
     /// The IP where to bind the server
     #[arg(short, long, env, default_value_t = LOCALHOST)]
     pub(crate) ip: IpAddr,
@@ -183,7 +179,6 @@ pub(crate) struct TlsConfig {
 /// in the [`Config::validate`] method.
 #[derive(Debug, Clone)]
 pub(crate) struct Config {
-    pub(crate) debug: bool,
     pub(crate) server: ServerBindingConfig,
     pub(crate) cache: Cache,
     pub(crate) pem: Option<TlsConfig>,
@@ -221,7 +216,6 @@ impl TryFrom<CliConfig> for Config {
         };
 
         Ok(Self {
-            debug: value.debug,
             server: ServerBindingConfig {
                 ip: value.ip,
                 port: value.port,
@@ -277,7 +271,6 @@ mod test {
         fn default() -> Self {
             CliConfig {
                 config: None,
-                debug: false,
                 ip: LOCALHOST,
                 port: DEFAULT_PORT,
                 pem_priv_key: None,
