@@ -107,5 +107,6 @@ networks:
 
 volumes:
   hmc-cache:
+  hmc-postgres:
   hmc-grafana:
   hmc-prometheus:

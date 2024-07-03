@@ -23,6 +23,7 @@ use tracing::{debug, error, warn};
 
 //TODO: Implement recursive dependencies
 //TODO: Add cache support
+//TODO: Add database support
 
 /// Health Check of the API
 pub(crate) async fn ping() -> &'static str {
@@ -34,7 +35,7 @@ pub(crate) async fn ws_handler_dependencies(
     State(state): State<AppState>,
     ws: WebSocketUpgrade,
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
-    axum::extract::Json(link): axum::extract::Json<Link>,
+    axum::extract::Query(link): axum::extract::Query<Link>,
 ) -> impl IntoResponse {
     ws.on_upgrade(move |socket| dependencies(state, socket, addr, link))
 }

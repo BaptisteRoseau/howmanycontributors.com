@@ -6,12 +6,12 @@ use crate::{
 use dioxus::prelude::*;
 
 #[component]
-pub fn Home() -> Element {
+pub fn Home(url: Option<String>) -> Element {
     let theme = use_theme();
     rsx! {
         Header { theme }
         Hero {},
-        MainSearch {},
+        MainSearch {url},
         div { class: "h-80%" },
         Footer {}
     }
