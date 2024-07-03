@@ -2,6 +2,7 @@ use crate::{api::endpoints::ping, api::state::AppState};
 
 use axum::{routing::get, Router};
 use axum_prometheus::metrics_exporter_prometheus::PrometheusHandle;
+use std::net::SocketAddr;
 use std::time::Duration;
 use std::{future::ready, sync::Arc};
 use tower::ServiceBuilder;
@@ -43,9 +44,10 @@ pub(crate) fn public_routes(app_state: &AppState) -> Router {
         .layer(CompressionLayer::new().quality(CompressionLevel::Best))
         .layer(RequestDecompressionLayer::new())
         // Rate Limiting per IP
-        .layer(GovernorLayer {
-            config: governor_conf,
-        })
+        // FIXME: Unable to extract key
+        // .layer(GovernorLayer {
+        //     config: governor_conf,
+        // })
         .layer(TimeoutLayer::new(Duration::from_secs(TIMEOUT_SEC)));
 
     Router::new()

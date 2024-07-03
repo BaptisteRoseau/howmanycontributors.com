@@ -1,13 +1,15 @@
+use std::net::SocketAddr;
+
 use crate::api::routes::{public_routes, try_metrics_routes};
 use crate::api::state::AppState;
-use crate::config::Config;
 use crate::cache::Cache;
+use crate::config::Config;
 use anyhow::Error;
 use axum::Router;
 use axum_prometheus::PrometheusMetricLayerBuilder;
-use tracing::info;
 use tokio::net::{TcpListener, ToSocketAddrs};
 use tokio::task::JoinHandle;
+use tracing::info;
 
 pub(crate) async fn run(config: &Config) -> Result<(), anyhow::Error> {
     tracing_subscriber::fmt::init();
@@ -76,14 +78,15 @@ where
     A: ToSocketAddrs,
 {
     let listener = TcpListener::bind(address).await?;
-    axum::serve(listener, routes).await?;
+    axum::serve(
+        listener,
+        routes.into_make_service_with_connect_info::<SocketAddr>(),
+    )
+    .await?;
     Ok(())
 }
 
-async fn serve_prometheus_metrics<A>(
-    address: A,
-    routes: Router,
-) -> Result<(), anyhow::Error>
+async fn serve_prometheus_metrics<A>(address: A, routes: Router) -> Result<(), anyhow::Error>
 where
     A: ToSocketAddrs,
 {

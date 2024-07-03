@@ -20,6 +20,10 @@ pub struct GitHubLinkDependencies {
     number_of_items: Option<usize>,
 }
 
+// Don't waste your time with Arc and RwLock, it does not fix the Websocket requirements
+unsafe impl Send for GitHubLinkDependencies {}
+unsafe impl Sync for GitHubLinkDependencies {}
+
 impl GitHubLinkDependencies {
     pub fn new(link: GitHubLink) -> Self {
         Self {

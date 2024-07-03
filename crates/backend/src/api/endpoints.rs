@@ -1,29 +1,24 @@
-use std::borrow::Cow;
-use std::collections::{HashMap, HashSet};
-use std::net::SocketAddr;
-use std::sync::Arc;
-
 use super::state::AppState;
-use crate::cache::Cache;
 use crate::models::{ContributorsChunk, Link};
-
-use async_recursion::async_recursion;
 use axum::extract::ws::CloseFrame;
 use axum::extract::{ConnectInfo, State};
 use axum::{
     extract::ws::{Message, WebSocket, WebSocketUpgrade},
     response::IntoResponse,
 };
-use github_scrapper::{GitHubError, GitHubLink, GitHubLinkDependencies};
-use std::time::Duration;
-use tokio::sync::RwLock;
-use tokio::time::sleep;
-use tracing::{debug, error, warn};
+use github_scrapper::GitHubLink;
+use std::borrow::Cow;
+use std::collections::HashSet;
+use std::net::SocketAddr;
+use tracing::{debug, error, info, warn};
 
-
-//TODO: Implement recursive dependencies
 //TODO: Add cache support
+// - Search in cache first, add in cache if not found with random delay
 //TODO: Add database support
+// - Add contributors to database
+// - Add total contributors to database
+// - Add dependencies to database + date updated to re-fetch them after a few days
+//TODO: Add prometheus metrics when requesting to GitHub
 
 /// Health Check of the API
 pub(crate) async fn ping() -> &'static str {
@@ -54,7 +49,7 @@ pub(crate) async fn dependencies(
         return;
     }
 
-    let Ok(link) = GitHubLink::try_from(link.link) else {
+    let Ok(link) = GitHubLink::try_from(link.link.clone()) else {
         let _ = socket
             .send(Message::Close(Some(CloseFrame {
                 code: axum::extract::ws::close_code::INVALID,
@@ -64,36 +59,34 @@ pub(crate) async fn dependencies(
         return;
     };
 
+    println!("Client {who} connected");
+
     let mut treated: HashSet<GitHubLink> = HashSet::new();
-    // ==
+    println!("Fetching {link}");
     let contributors = link.fetch_contributors().await.unwrap_or(1);
     treated.insert(link.clone());
-    let chunk = ContributorsChunk::new(link.path(), contributors).to_chunk();
+    let chunk = ContributorsChunk::new(link.path(), contributors).to_string();
     if socket.send(Message::Text(chunk)).await.is_err() {
         println!("Client {who} disconnected");
         return;
     }
-    // ==
 
-    // let mut dep_iterator = link.dependencies();
-    // while let Some(dep) = dep_iterator.next().await {
-    //     if let Ok(l) = dep {
-    //         // ==
-    //         l.fetch_contributors().await.unwrap_or(1);
-    //         treated.insert(link.clone());
-    //         let chunk = ContributorsChunk::new(link.path(), contributors).to_chunk();
-    //         if socket.send(Message::Text(chunk)).await.is_err() {
-    //             println!("Client {who} disconnected");
-    //             return;
-    //         }
-    //         // ==
-    //         if !treated.contains(&link) {
-    //             treated.insert(link.clone());
-    //         }
-    //     } else {
-    //         error!("Dependency fetching error: {}", dep.unwrap_err());
-    //     }
-    // }
+    let mut dep_iterator = link.dependencies();
+    while let Some(dep) = dep_iterator.next().await {
+        if let Ok(l) = dep {
+            if treated.insert(l.clone()) {
+                println!("Fetching {l}");
+                l.fetch_contributors().await.unwrap_or(1);
+                let chunk = ContributorsChunk::new(l.path(), contributors).to_string();
+                if socket.send(Message::Text(chunk)).await.is_err() {
+                    println!("Client {who} disconnected");
+                    return;
+                }
+            }
+        } else {
+            error!("Dependency fetching error: {}", dep.unwrap_err());
+        }
+    }
 
     let _ = socket.send(Message::Close(None)).await;
     let _ = socket.close();
@@ -101,7 +94,6 @@ pub(crate) async fn dependencies(
 }
 
 
-// #[async_recursion(Sync)]
 // async fn recursive_dependencies(
 //     link: GitHubLink,
 //     dependencies: Arc<RwLock<HashMap<String, usize>>>,
@@ -124,7 +116,7 @@ pub(crate) async fn dependencies(
 //     // instead of vertical tree scanning.
 //     for l in direct_deps.into_iter() {
 //         sleep(Duration::from_secs(1)).await;
-//         recursive_dependencies(l, dependencies.clone()).await;
+//         let _ = Box::pin(recursive_dependencies(l, dependencies.clone())).await;
 //     }
 //     Ok(())
 // }

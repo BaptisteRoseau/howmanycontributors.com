@@ -10,9 +10,8 @@ pub fn Home(url: Option<String>) -> Element {
     let theme = use_theme();
     rsx! {
         Header { theme }
-        Hero {},
-        MainSearch {url},
-        div { class: "h-80%" },
+        Hero {}
+        MainSearch { url }
         Footer {}
     }
 }
