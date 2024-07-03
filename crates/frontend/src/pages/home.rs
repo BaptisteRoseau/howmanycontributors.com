@@ -1,6 +1,5 @@
 use crate::{
-    assets::{MoonIcon, PcIcon, SunIcon},
-    components::{Footer, Header, Hero},
+    components::{Footer, Header, Hero, MainSearch},
     hooks::use_theme,
 };
 
@@ -9,11 +8,11 @@ use dioxus::prelude::*;
 #[component]
 pub fn Home() -> Element {
     let theme = use_theme();
-    let selected = use_signal(|| true);
     rsx! {
         Header { theme }
         Hero {},
-        div { class: "container", SunIcon {selected}, MoonIcon {selected}, PcIcon {selected} },
+        MainSearch {},
+        div { class: "h-80%" },
         Footer {}
     }
 }

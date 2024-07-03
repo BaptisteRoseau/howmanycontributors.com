@@ -9,6 +9,18 @@ services:
     container_name: hmc-redis
     networks:
       - hmc
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - "hmc-cache:/data"
+    command: redis-server --save 60 1 --loglevel warning
+
+  database:
+    image: postgres:16.2
+    container_name: hmc-postgres
+    networks:
+      - hmc
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
@@ -20,7 +32,10 @@ services:
       POSTGRES_HOST_AUTH_METHOD: trust # You should specify the mode and IP range in production
     ports:
       - "5432:5432"
-    restart: always
+    restart: on-failure
+    volumes:
+      - "hmc-postgres:/var/lib/postgresql/data"
+      - "./database:/docker-entrypoint-initdb.d/"
 
   grafana:
     image: grafana/grafana:10.4.2
@@ -32,7 +47,7 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: admin
     ports:
       - "3000:3000"
-    restart: on-failure
+    restart: always
     volumes:
       - "hmc-grafana:/var/lib/grafana"
 
@@ -43,7 +58,7 @@ services:
       - hmc
     ports:
       - "9090:9090"
-    restart: on-failure
+    restart: always
     volumes:
       - "hmc-prometheus:/prometheus"
       - ./manifests/prometheus:/etc/prometheus
@@ -67,7 +82,7 @@ services:
       - "8090:24316"
       - "8091:7070"
       - "8092:9090"
-    restart: on-failure
+    restart: always
     volumes:
       - ".:/src"
 
@@ -83,7 +98,7 @@ services:
       - API_ROOT=http://127.0.0.1:8090/
     ports:
       - "8080:8080"
-    restart: on-failure
+    restart: always
     volumes:
       - ".:/src"
 
@@ -91,6 +106,6 @@ networks:
   hmc:
 
 volumes:
-  hmc-postgres:
+  hmc-cache:
   hmc-grafana:
   hmc-prometheus:

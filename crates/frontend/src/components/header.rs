@@ -18,7 +18,7 @@ pub fn Header(theme: Signal<ThemeHandler>) -> Element {
                             Logo {}
                         }
                     }
-                    div { class: "hidden md:block",
+                    div {
                         nav { "aria-label": "Global",
                             ul { class: "flex items-center gap-6 text-sm",
                                 li {
@@ -26,13 +26,6 @@ pub fn Header(theme: Signal<ThemeHandler>) -> Element {
                                         href: "#",
                                         class: "text-gray-500 transition hover:text-gray-500/75",
                                         "About"
-                                    }
-                                }
-                                li {
-                                    a {
-                                        href: "#",
-                                        class: "text-gray-500 transition hover:text-gray-500/75",
-                                        "Decks"
                                     }
                                 }
                             }

@@ -1,5 +1,6 @@
 mod home;
-mod not_found;
+mod about;
 
 pub use home::Home;
+pub use about::About;
 

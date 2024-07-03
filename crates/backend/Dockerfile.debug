@@ -14,12 +14,12 @@ COPY Cargo.toml ./Cargo.toml
 
 EXPOSE 24316
 
-ENTRYPOINT [ "cargo", "watch", "--why", "--delay", "1.5", \
+ENTRYPOINT [ \
+    "cargo", "watch", "--why", "--delay", "1.5", \
     "-x", "'build -p backend'", \
     "--watch", "./Cargo.toml", \
     "--watch", "crates/backend/src", \
     "--watch", "crates/backend/Cargo.toml", \
-    "--watch", "crates/authentication", \
-    "--watch", "crates/logging", \
     "--", "cargo", "run", "--bin", "backend", \
-    "--", "--port", "24316", "--debug" ]
+    "--", "--port", "24316" \
+    ]
