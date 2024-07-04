@@ -29,7 +29,7 @@ services:
       GRAFANA_USER: grafana
       GRAFANA_PASSWORD: password
       PGDATA: /var/lib/postgresql/data/pgdata
-      POSTGRES_HOST_AUTH_METHOD: trust # You should specify the mode and IP range in production
+      # POSTGRES_HOST_AUTH_METHOD: trust # You should specify the mode and IP range in production
     ports:
       - "5432:5432"
     restart: on-failure
