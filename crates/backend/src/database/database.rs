@@ -1,19 +1,19 @@
 use super::errors::DatabaseError;
 use super::models::RepositoryInfo;
 use crate::config::Config;
-use chrono::{TimeZone, Utc};
+use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
 use deadpool_postgres::{Config as DpConfig, ManagerConfig, Pool, RecyclingMethod, Runtime};
 use github_scrapper::GitHubLink;
 use log::warn;
 use std::future::Future;
-use tokio_postgres::types::ToSql;
+use tokio_postgres::types::{FromSql, ToSql, Type};
 use tokio_postgres::{NoTls, Row};
-use tracing::debug;
+use tracing::{debug, info};
 
 // TODO: Require SSL when enabled in config & when using release config
 
 #[axum::async_trait]
-pub(crate) trait Database {
+pub trait Database {
     fn close(&mut self) -> impl Future<Output = Result<(), DatabaseError>> + Send;
     fn init(
         &mut self,
@@ -26,24 +26,17 @@ pub(crate) trait Database {
     fn insert_repository_contributors(
         &self,
         link: &GitHubLink,
-        contributors: i64,
+        contributors: i32,
     ) -> impl Future<Output = Result<(), DatabaseError>> + Send;
-
-    fn insert_repository_total_contributors(
-        &self,
-        link: &GitHubLink,
-        total_contributors: i64,
-    ) -> impl Future<Output = Result<(), DatabaseError>> + Send;
-
     fn insert_repository_dependencies(
         &self,
         link: &GitHubLink,
-        dependencies: Vec<GitHubLink>,
+        dependencies: &Vec<GitHubLink>,
     ) -> impl Future<Output = Result<(), DatabaseError>> + Send;
 }
 
 #[derive(Clone)]
-pub(crate) struct PostgresDatabase {
+pub struct PostgresDatabase {
     pool: Pool,
 }
 
@@ -53,6 +46,11 @@ impl PostgresDatabase {
         let pool = cfg.create_pool(Some(Runtime::Tokio1), NoTls)?;
         if pool.get().await.is_err() {
             warn!("Could not connect to database yet");
+        } else {
+            info!(
+                "Connected to Postgres {}:{}",
+                &config.postgres.host, config.postgres.port
+            );
         }
         Ok(Self { pool })
     }
@@ -70,7 +68,7 @@ impl PostgresDatabase {
         Ok(dp_config)
     }
 
-    pub async fn query_one_cached<T: ToString>(
+    async fn query_one_cached<T: ToString>(
         &self,
         query: T,
         params: &[&(dyn ToSql + Sync)],
@@ -81,7 +79,7 @@ impl PostgresDatabase {
         Ok(row)
     }
 
-    pub async fn query_one<T: ToString>(
+    async fn query_one<T: ToString>(
         &self,
         query: T,
         params: &[&(dyn ToSql + Sync)],
@@ -91,7 +89,7 @@ impl PostgresDatabase {
         Ok(row)
     }
 
-    pub async fn execute_cached<T: ToString>(
+    async fn execute_cached<T: ToString>(
         &self,
         query: T,
         params: &[&(dyn ToSql + Sync)],
@@ -101,7 +99,7 @@ impl PostgresDatabase {
         Ok(client.execute(&statement, params).await?)
     }
 
-    pub async fn execute<T: ToString>(
+    async fn execute<T: ToString>(
         &self,
         query: T,
         params: &[&(dyn ToSql + Sync)],
@@ -116,7 +114,7 @@ impl TryInto<RepositoryInfo> for Row {
     type Error = DatabaseError;
 
     fn try_into(self) -> Result<RepositoryInfo, Self::Error> {
-        const EXPECTED_LENGTH: usize = 5;
+        const EXPECTED_LENGTH: usize = 6;
         if self.is_empty() {
             return Err(DatabaseError::NotFound("".to_string()));
         };
@@ -127,14 +125,16 @@ impl TryInto<RepositoryInfo> for Row {
             });
         }
 
+        let created_at: DateTime<Utc> = self.get(3);
+        let updated_at: DateTime<Utc> = self.get(4);
+        let valid_until: DateTime<Utc> = self.get(5);
         Ok(RepositoryInfo {
-            name: self.get(0),
+            path: self.get(0),
             contributors: self.get(1),
-            total_contributors: Some(self.get(2)),
-            dependencies: self.get(3),
-            created_at: Utc.from_utc_datetime(&self.get(4)),
-            updated_at: Utc.from_utc_datetime(&self.get(5)),
-            valid_until: Utc.from_utc_datetime(&self.get(6)),
+            dependencies: self.get(2),
+            created_at: created_at,
+            updated_at: updated_at,
+            valid_until: valid_until,
         })
     }
 }
@@ -162,34 +162,17 @@ impl Database for PostgresDatabase {
     async fn insert_repository_contributors(
         &self,
         link: &GitHubLink,
-        contributors: i64,
+        contributors: i32,
     ) -> Result<(), DatabaseError> {
         let path = link.path();
         let path = path.as_str();
         debug!("Getting repository {} from database", path);
         self.execute_cached(
-            "INSERT INTO cards (path, contributors)
+            "INSERT INTO repositories (path, contributors)
             VALUES ($1, $2)
-            ON CONFLICT DO UPDATE",
+            ON CONFLICT (path) DO UPDATE
+            SET path = $1, contributors = $2",
             &[&path, &contributors],
-        )
-        .await?;
-        Ok(())
-    }
-
-    async fn insert_repository_total_contributors(
-        &self,
-        link: &GitHubLink,
-        total_contributors: i64,
-    ) -> Result<(), DatabaseError> {
-        let path = link.path();
-        let path = path.as_str();
-        debug!("Getting repository {} from database", path);
-        self.execute_cached(
-            "INSERT INTO cards (path, total_contributors)
-            VALUES ($1, $2)
-            ON CONFLICT DO UPDATE",
-            &[&path, &(total_contributors as i64)],
         )
         .await?;
         Ok(())
@@ -198,7 +181,7 @@ impl Database for PostgresDatabase {
     async fn insert_repository_dependencies(
         &self,
         link: &GitHubLink,
-        dependencies: Vec<GitHubLink>,
+        dependencies: &Vec<GitHubLink>,
     ) -> Result<(), DatabaseError> {
         let path = link.path();
         let path = path.as_str();
@@ -208,9 +191,10 @@ impl Database for PostgresDatabase {
             .collect::<Vec<String>>();
         debug!("Getting repository {} from database", path);
         self.execute_cached(
-            "INSERT INTO cards (path, dependencies)
+            "INSERT INTO repositories (path, dependencies)
             VALUES ($1, $2)
-            ON CONFLICT DO UPDATE",
+            ON CONFLICT (path) DO UPDATE
+            SET path = $1, dependencies = $2",
             &[&path, &dependencies],
         )
         .await?;

@@ -12,12 +12,14 @@ lazy_static! {
 
 /// An iterator over a [`GitHubLink`]'s dependencies.
 pub struct GitHubLinkDependencies {
-    link: GitHubLink,
+    link: Option<GitHubLink>,
     index: usize,
     page: usize,
     current_html: Option<Html>,
     number_of_pages: Option<usize>,
     number_of_items: Option<usize>,
+    precomputed: Option<Vec<GitHubLink>>,
+    precomputed_idx: usize,
 }
 
 // Don't waste your time with Arc and RwLock, it does not fix the Websocket requirements
@@ -27,13 +29,32 @@ unsafe impl Sync for GitHubLinkDependencies {}
 impl GitHubLinkDependencies {
     pub fn new(link: GitHubLink) -> Self {
         Self {
-            link,
+            link: Some(link),
             index: 0,
             page: 0,
             number_of_pages: None,
             current_html: None,
             number_of_items: None,
+            precomputed: None,
+            precomputed_idx: 0,
         }
+    }
+
+    pub fn from_precomputed(links: Vec<GitHubLink>) -> Self {
+        Self {
+            link: None,
+            index: 0,
+            page: 0,
+            number_of_pages: None,
+            current_html: None,
+            number_of_items: None,
+            precomputed: Some(links),
+            precomputed_idx: 0,
+        }
+    }
+
+    pub fn is_precomputed(&self) -> bool {
+        self.precomputed.is_some()
     }
 
     /// Iterates over the next dependency. Can be used as follows:
@@ -50,6 +71,15 @@ impl GitHubLinkDependencies {
     ///}
     ///```
     pub async fn next(&mut self) -> Option<Result<GitHubLink, GitHubError>> {
+        if let Some(precomputed) = &self.precomputed {
+            if self.precomputed_idx >= precomputed.len() {
+                return None;
+            }
+            let out = precomputed.get(self.precomputed_idx).unwrap();
+            self.precomputed_idx += 1;
+            return Some(Ok(out.clone()));
+        }
+
         if self.current_html.is_none() {
             if self.number_of_pages.is_some() && self.page >= self.number_of_pages.unwrap() {
                 return None;
@@ -104,7 +134,11 @@ impl GitHubLinkDependencies {
     }
 
     async fn fetch_page(&self, page: usize) -> Result<Html, GitHubError> {
-        let link = format!("{}/network/dependencies?page={}", self.link.link(), page);
+        let link = format!(
+            "{}/network/dependencies?page={}",
+            self.link.clone().unwrap().link(),
+            page
+        );
         fetch_page(&link).await
     }
 }

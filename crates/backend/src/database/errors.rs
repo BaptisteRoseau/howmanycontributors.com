@@ -3,7 +3,7 @@ use thiserror::Error;
 use tokio_postgres::error::SqlState;
 
 #[derive(Error, Debug)]
-pub(crate) enum DatabaseError {
+pub enum DatabaseError {
     #[error("'{0}' does not exist")]
     NotFound(String),
     #[error("Unexpected length of the SQL column. Expected {expected:?}, got {got:?}")]
@@ -75,6 +75,9 @@ impl From<tokio_postgres::Error> for DatabaseError {
                 }
                 _ => DatabaseError::PostgresError(err),
             };
+        }
+        if format!("{:?}", err) == "Error { kind: RowCount, cause: None }" {
+            return DatabaseError::NotFound("".to_string());
         }
         DatabaseError::PostgresError(err)
     }

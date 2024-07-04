@@ -83,6 +83,7 @@ services:
       DATABASE_NAME: hmc
       DATABASE_USER: backend
       DATABASE_PASSWORD: password
+      RUST_BACKTRACE: 1
     networks:
       - hmc
     ports:

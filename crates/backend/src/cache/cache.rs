@@ -3,7 +3,7 @@ use crate::config::Config;
 // use deadpool_redis::cluster::{Config as RedisConfig, Pool, Runtime};
 use deadpool_redis::{Config as RedisConfig, Pool, Runtime};
 use deadpool_redis::redis::cmd;
-use log::debug;
+use log::{debug, info};
 use std::time::Duration;
 use tracing::warn;
 
@@ -30,6 +30,8 @@ impl RedisCache {
         let pool = cfg.create_pool(Some(Runtime::Tokio1))?;
         if pool.get().await.is_err() {
             warn!("Could not connect to Redis yet.");
+        } else {
+            info!("Connected to Redis {}", config.cache.urls.join(", "));
         }
         Ok(Self { pool })
     }
