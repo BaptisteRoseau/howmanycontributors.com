@@ -1,12 +1,12 @@
 use super::errors::DatabaseError;
 use super::models::RepositoryInfo;
 use crate::config::Config;
-use chrono::{DateTime, NaiveDateTime, TimeZone, Utc};
+use chrono::{DateTime, Utc};
 use deadpool_postgres::{Config as DpConfig, ManagerConfig, Pool, RecyclingMethod, Runtime};
 use github_scrapper::GitHubLink;
 use log::warn;
 use std::future::Future;
-use tokio_postgres::types::{FromSql, ToSql, Type};
+use tokio_postgres::types::{ToSql};
 use tokio_postgres::{NoTls, Row};
 use tracing::{debug, info};
 
@@ -31,7 +31,7 @@ pub trait Database {
     fn insert_repository_dependencies(
         &self,
         link: &GitHubLink,
-        dependencies: &Vec<GitHubLink>,
+        dependencies: &[GitHubLink],
     ) -> impl Future<Output = Result<(), DatabaseError>> + Send;
 }
 
@@ -132,9 +132,9 @@ impl TryInto<RepositoryInfo> for Row {
             path: self.get(0),
             contributors: self.get(1),
             dependencies: self.get(2),
-            created_at: created_at,
-            updated_at: updated_at,
-            valid_until: valid_until,
+            created_at,
+            updated_at,
+            valid_until,
         })
     }
 }
@@ -181,7 +181,7 @@ impl Database for PostgresDatabase {
     async fn insert_repository_dependencies(
         &self,
         link: &GitHubLink,
-        dependencies: &Vec<GitHubLink>,
+        dependencies: &[GitHubLink],
     ) -> Result<(), DatabaseError> {
         let path = link.path();
         let path = path.as_str();

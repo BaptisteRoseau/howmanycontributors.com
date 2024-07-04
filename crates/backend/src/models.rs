@@ -16,7 +16,7 @@ impl ContributorsChunk {
         Self { path, contributors }
     }
 
-    pub fn to_string(self) -> String {
+    pub fn to_string(&self) -> String {
         format!("{}:{}", self.path, self.contributors)
     }
 }

@@ -15,7 +15,6 @@ use std::borrow::Cow;
 use std::collections::HashSet;
 use std::net::SocketAddr;
 use std::time::Duration;
-use std::usize;
 use tracing::{debug, error, info, warn};
 
 //TODO: Add prometheus metrics when requesting to GitHub
@@ -82,7 +81,7 @@ pub(crate) async fn dependencies(
     let mut dep_iterator: GitHubLinkDependencies = get_from_database(&link, state.clone())
         .await
         .and_then(|repo_info| dependencies_from_repository_info(&repo_info))
-        .and_then(|precomputed| Some(GitHubLinkDependencies::from_precomputed(precomputed)))
+        .map(GitHubLinkDependencies::from_precomputed)
         .or(Some(link.dependencies()))
         .expect("You fucked up.");
 
@@ -112,7 +111,7 @@ pub(crate) async fn dependencies(
     }
 
     let _ = socket.send(Message::Close(None)).await;
-    let _ = socket.close();
+    let _ = socket.close().await;
 }
 
 async fn get_from_cache(link: &GitHubLink, state: AppState) -> Option<usize> {
@@ -207,7 +206,7 @@ async fn set_contributors_to_database(link: &GitHubLink, contributors: usize, st
 
 async fn set_dependencies_to_database(
     link: &GitHubLink,
-    dependencies: &Vec<GitHubLink>,
+    dependencies: &[GitHubLink],
     state: AppState,
 ) {
     info!("Saving dependencies for {link} in database");

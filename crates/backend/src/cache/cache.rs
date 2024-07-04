@@ -104,7 +104,7 @@ impl Cache for RedisCache {
     async fn set_leaderboard(&mut self, key: &str, weight: i32) -> Result<(), CacheError> {
         let mut conn = self.pool.get().await?;
         cmd("ZADD")
-            .arg(&[LEADERBOARD_KEY, &weight.to_string().as_str(), key])
+            .arg(&[LEADERBOARD_KEY, (weight.to_string().as_str()), key])
             .query_async(&mut conn)
             .await?;
         cmd("ZREMRANGEBYRANK")

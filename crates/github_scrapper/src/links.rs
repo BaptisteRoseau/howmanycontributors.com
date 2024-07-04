@@ -7,7 +7,8 @@ use crate::{errors::GitHubError, GitHubLinkDependencies};
 
 lazy_static! {
     static ref LINK_PATTERN: Regex =
-        Regex::new(r#"^https?://github.com/([a-zA-Z0-9_\.-]{1,35})/([a-zA-Z0-9_\.-]{1,101})/?$"#).unwrap();
+        Regex::new(r#"^https?://github.com/([a-zA-Z0-9_\.-]{1,35})/([a-zA-Z0-9_\.-]{1,101})/?$"#)
+            .unwrap();
     static ref SPAN_SELECTOR: Selector = Selector::parse("span").unwrap();
 }
 
@@ -36,14 +37,15 @@ impl TryFrom<String> for GitHubLink {
     type Error = GitHubError;
 
     fn try_from(value: String) -> Result<Self, Self::Error> {
-        if let Some(captures) = LINK_PATTERN.captures(&value.clone()) {
+        let value = value.trim();
+        if let Some(captures) = LINK_PATTERN.captures(value) {
             return Ok(Self {
-                link: value,
+                link: value.to_string(),
                 owner: captures[1].to_string(),
                 repo: captures[2].to_string(),
             });
         }
-        Err(GitHubError::InvalidLink(value))
+        Err(GitHubError::InvalidLink(value.to_string()))
     }
 }
 
@@ -118,6 +120,10 @@ mod tests {
         assert_eq!(link.path(), "OWNER/REPO");
 
         assert!(GitHubLink::try_from("https://github.com/OWNER/REPO/".to_string()).is_ok());
+        assert!(
+            GitHubLink::try_from("       https://github.com/OWNER/REPO/    \n  ".to_string())
+                .is_ok()
+        );
         assert!(GitHubLink::try_from("http://github.com/OWNER/REPO".to_string()).is_ok());
     }
 
@@ -137,7 +143,7 @@ mod tests {
     }
 
     #[test]
-    fn test_format() {  
+    fn test_format() {
         let link = GitHubLink::try_from("https://github.com/OWNER/REPO".to_string()).unwrap();
         assert_eq!(format!("{}", link), "OWNER/REPO");
     }

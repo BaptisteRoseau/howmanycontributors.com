@@ -138,9 +138,7 @@ impl GitHubLinkDependencies {
             self.number_of_items = Some(elements.clone().count());
         }
 
-        let Some(current_element) = elements.nth(self.index) else {
-            return None;
-        };
+        let current_element = elements.nth(self.index)?;
         let repo_path = current_element.attr("href").unwrap();
         let repo_path = format!("https://github.com{}", repo_path.trim());
         let output = GitHubLink::try_from(repo_path);
