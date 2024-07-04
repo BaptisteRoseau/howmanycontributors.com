@@ -11,6 +11,9 @@ pub(crate) enum ConfigParsingError {
     #[error("Missing PEM private key")]
     MissingPemPrivKey,
 
+    #[error("{}", .0)]
+    Error(String),
+
     #[error("Config has an invalid YAML format")]
     Parsing(#[from] serde_yaml::Error),
 }

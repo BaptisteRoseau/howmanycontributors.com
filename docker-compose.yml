@@ -14,7 +14,7 @@ services:
       - "6379:6379"
     volumes:
       - "hmc-cache:/data"
-    command: redis-server --save 60 1 --loglevel warning
+    command: redis-server --save 60 1
 
   database:
     image: postgres:16.2
@@ -76,6 +76,8 @@ services:
       PROMETHEUS_IP: 0.0.0.0
       SWAGGER_IP: 0.0.0.0
       DEBUG: true
+      RUST_LOG: info
+      CACHE_CLUSTER_URLS: redis://hmc-redis:6379/
     networks:
       - hmc
     ports:

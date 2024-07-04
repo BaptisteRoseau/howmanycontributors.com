@@ -2,7 +2,7 @@ use std::net::SocketAddr;
 
 use crate::api::routes::{public_routes, try_metrics_routes};
 use crate::api::state::AppState;
-use crate::cache::Cache;
+use crate::cache::RedisCache;
 use crate::config::Config;
 use anyhow::Error;
 use axum::Router;
@@ -10,12 +10,14 @@ use axum_prometheus::PrometheusMetricLayerBuilder;
 use tokio::net::{TcpListener, ToSocketAddrs};
 use tokio::task::JoinHandle;
 use tracing::info;
+use tracing_subscriber::{filter, prelude::*};
 
 pub(crate) async fn run(config: &Config) -> Result<(), anyhow::Error> {
-    tracing_subscriber::fmt::init();
-    info!("Initializing Database...");
-    let cache = Cache::try_from(config)?;
-    cache.init(config).await?;
+    tracing_subscriber::registry()
+        .with(tracing_subscriber::fmt::layer().with_filter(filter::EnvFilter::from_default_env()))
+        .init();
+    info!("Initializing Cache...");
+    let cache = RedisCache::try_from(config).await?;
 
     info!("Initializing application state...");
     let app_state = AppState::try_new(config, cache)?;

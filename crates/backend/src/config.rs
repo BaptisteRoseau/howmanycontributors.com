@@ -12,11 +12,11 @@ const DEFAULT_PORT: u16 = 6969;
 const DEFAULT_PROMETHEUS_IP: IpAddr = LOCALHOST;
 const DEFAULT_PROMETHEUS_PORT: u16 = 9090;
 
-const DEFAULT_CACHE_HOST: &str = "127.0.0.1";
-const DEFAULT_CACHE_PORT: u16 = 5432;
-const DEFAULT_CACHE_NAME: &str = "hmc";
+const DEFAULT_CACHE_URLS: &str = "redis://hmc-redis:6379/";
 const DEFAULT_CACHE_USER: &str = "backend";
 const DEFAULT_CACHE_PASSWORD: &str = "password";
+const DEFAULT_CACHE_VALIDITY_SEC_MIN: usize = 259200; // 3 days
+const DEFAULT_CACHE_VALIDITY_SEC_MAX: usize = 345600; // 4 days
 
 const DEFAULT_CONFIG_FILE_PATH: &str = ".config.yaml";
 
@@ -69,17 +69,10 @@ struct CliConfig {
     /* ===============
     CACHE
     ================ */
-    /// CACHE host
-    #[arg(long, env, default_value_t = DEFAULT_CACHE_HOST.to_string())]
-    pub(crate) cache_host: String,
-
-    /// CACHE port
-    #[arg(long, env, default_value_t = DEFAULT_CACHE_PORT)]
-    pub(crate) cache_port: u16,
-
-    /// CACHE name
-    #[arg(long, env, default_value_t = DEFAULT_CACHE_NAME.to_string())]
-    pub(crate) cache_name: String,
+    /// CACHE urls. ','-separated list of URLs to connect to.
+    /// Example: redis://redis-srv1:6379/,redis://user:password@redis-srv1:6379/
+    #[arg(long, env, default_value_t = DEFAULT_CACHE_URLS.to_string())]
+    pub(crate) cache_cluster_urls: String,
 
     /// CACHE user
     #[arg(long, env, default_value_t = DEFAULT_CACHE_USER.to_string())]
@@ -88,6 +81,14 @@ struct CliConfig {
     /// CACHE password
     #[arg(long, env, default_value_t = DEFAULT_CACHE_PASSWORD.to_string())]
     pub(crate) cache_password: String,
+
+    /// CACHE minimum Time To Live in seconds
+    #[arg(long, env, default_value_t = DEFAULT_CACHE_VALIDITY_SEC_MIN)]
+    pub(crate) cache_ttl_sec_min: usize,
+
+    /// CACHE maximum Time To Live in seconds
+    #[arg(long, env, default_value_t = DEFAULT_CACHE_VALIDITY_SEC_MAX)]
+    pub(crate) cache_ttl_sec_max: usize,
 
     /* ===============
     PROMETHEUS
@@ -154,11 +155,11 @@ pub(crate) struct BindingConfig {
 
 #[derive(Debug, Clone)]
 pub(crate) struct Cache {
-    pub(crate) host: String,
-    pub(crate) port: u16,
-    pub(crate) cache: String,
+    pub(crate) urls: Vec<String>,
     pub(crate) user: String,
     pub(crate) password: String,
+    pub(crate) ttl_sec_min: usize,
+    pub(crate) ttl_sec_max: usize,
 }
 
 type ServerBindingConfig = BindingConfig;
@@ -221,11 +222,15 @@ impl TryFrom<CliConfig> for Config {
                 port: value.port,
             },
             cache: Cache {
-                host: value.cache_host,
-                port: value.cache_port,
-                cache: value.cache_name,
+                urls: value
+                    .cache_cluster_urls
+                    .split(',')
+                    .map(String::from)
+                    .collect::<Vec<_>>(),
                 user: value.cache_user,
                 password: value.cache_password,
+                ttl_sec_min: value.cache_ttl_sec_min,
+                ttl_sec_max: value.cache_ttl_sec_max,
             },
             prometheus,
             pem,
@@ -249,6 +254,11 @@ impl Config {
         #[cfg(not(debug_assertions))]
         if cli_config.password_salt == String::from(DEFAULT_SALT) {
             return Err(ConfigParsingError::DefaultPasswordSaltInReleaseMode);
+        }
+        if cli_config.cache_ttl_sec_max < cli_config.cache_ttl_sec_min {
+            return Err(ConfigParsingError::Error(
+                "Cache TTL max must be greater or equal to min".to_string(),
+            ));
         }
 
         if cli_config.no_prometheus
@@ -275,11 +285,11 @@ mod test {
                 port: DEFAULT_PORT,
                 pem_priv_key: None,
                 pem_pub_key: None,
-                cache_host: DEFAULT_CACHE_HOST.to_string(),
-                cache_port: DEFAULT_CACHE_PORT,
-                cache_name: DEFAULT_CACHE_NAME.to_string(),
+                cache_cluster_urls: DEFAULT_CACHE_URLS.to_string(),
                 cache_user: DEFAULT_CACHE_USER.to_string(),
                 cache_password: DEFAULT_CACHE_PASSWORD.to_string(),
+                cache_ttl_sec_min: DEFAULT_CACHE_VALIDITY_SEC_MIN,
+                cache_ttl_sec_max: DEFAULT_CACHE_VALIDITY_SEC_MAX,
                 prometheus_ip: DEFAULT_PROMETHEUS_IP,
                 prometheus_port: DEFAULT_PROMETHEUS_PORT,
                 no_prometheus: false,

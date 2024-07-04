@@ -1,4 +1,5 @@
 use super::state::AppState;
+use crate::cache::{Cache, CacheError};
 use crate::models::{ContributorsChunk, Link};
 use axum::extract::ws::CloseFrame;
 use axum::extract::{ConnectInfo, State};
@@ -7,9 +8,12 @@ use axum::{
     response::IntoResponse,
 };
 use github_scrapper::GitHubLink;
+use rand::{thread_rng, Rng};
 use std::borrow::Cow;
 use std::collections::HashSet;
 use std::net::SocketAddr;
+use std::time::Duration;
+use std::usize;
 use tracing::{debug, error, info, warn};
 
 //TODO: Add cache support
@@ -43,7 +47,7 @@ pub(crate) async fn dependencies(
 ) {
     // Handshake
     if socket.send(Message::Ping(vec![1, 2, 3])).await.is_ok() {
-        debug!("Pinged {who}");
+        info!("Client {who} wants to connect");
     } else {
         warn!("Could not ping {who}");
         return;
@@ -59,15 +63,16 @@ pub(crate) async fn dependencies(
         return;
     };
 
-    println!("Client {who} connected");
+    info!("Client {who} connected");
 
     let mut treated: HashSet<GitHubLink> = HashSet::new();
-    println!("Fetching {link}");
-    let contributors = link.fetch_contributors().await.unwrap_or(1);
+    let contributors = get_from_cache_or_fetch(&link, state.clone()).await;
+
     treated.insert(link.clone());
     let chunk = ContributorsChunk::new(link.path(), contributors).to_string();
+    let chunk = format!("{chunk}\n");
     if socket.send(Message::Text(chunk)).await.is_err() {
-        println!("Client {who} disconnected");
+        info!("Client {who} disconnected");
         return;
     }
 
@@ -75,11 +80,11 @@ pub(crate) async fn dependencies(
     while let Some(dep) = dep_iterator.next().await {
         if let Ok(l) = dep {
             if treated.insert(l.clone()) {
-                println!("Fetching {l}");
-                l.fetch_contributors().await.unwrap_or(1);
+                let contributors = get_from_cache_or_fetch(&l, state.clone()).await;
                 let chunk = ContributorsChunk::new(l.path(), contributors).to_string();
+                let chunk = format!("{chunk}\n");
                 if socket.send(Message::Text(chunk)).await.is_err() {
-                    println!("Client {who} disconnected");
+                    info!("Client {who} disconnected");
                     return;
                 }
             }
@@ -93,6 +98,55 @@ pub(crate) async fn dependencies(
     return;
 }
 
+async fn get_from_cache(link: &GitHubLink, state: AppState) -> Option<usize> {
+    let guard = state.cache.read().await;
+    match guard.get::<usize>(&link.to_string().as_str()).await {
+        Ok(contributors) => {
+            info!("Using cached value for {link}");
+            Some(contributors)
+        }
+        Err(_) => None,
+    }
+}
+
+async fn set_to_cache(
+    link: &GitHubLink,
+    contributors: usize,
+    state: AppState,
+) -> Result<(), CacheError> {
+    let mut guard = state.cache.write().await;
+    let lifetime: Option<Duration>;
+    {
+        let mut rng = thread_rng();
+        lifetime = Some(Duration::from_secs(
+            rng.gen_range(state.config.cache.ttl_sec_min..state.config.cache.ttl_sec_max) as u64,
+        ));
+    }
+    match guard
+        .set::<usize>(link.to_string().as_str(), &contributors, lifetime)
+        .await
+    {
+        Ok(_) => {
+            info!("Setting cached value for {link}:{contributors} {lifetime:?}");
+            Ok(())
+        }
+        Err(e) => {
+            error!("Error setting cached value for {link}:{contributors} {e}");
+            Err(e)
+        }
+    }
+}
+
+async fn get_from_cache_or_fetch(link: &GitHubLink, state: AppState) -> usize {
+    match get_from_cache(link, state.clone()).await {
+        Some(c) => c,
+        None => {
+            let contributors = link.fetch_contributors().await.unwrap_or(1);
+            let _ = set_to_cache(link, contributors, state).await;
+            contributors
+        }
+    }
+}
 
 // async fn recursive_dependencies(
 //     link: GitHubLink,

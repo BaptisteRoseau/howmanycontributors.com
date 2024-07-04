@@ -1,4 +1,4 @@
-use crate::{config::Config, cache::Cache};
+use crate::{config::Config, cache::RedisCache};
 
 use axum::extract::FromRef;
 use std::sync::Arc;
@@ -44,14 +44,14 @@ use super::errors::ApiError;
 /// ```
 #[derive(Clone)]
 pub(crate) struct AppState {
-    pub cache: Arc<RwLock<Cache>>,
+    pub cache: Arc<RwLock<RedisCache>>,
     pub config: Arc<Config>,
 }
 
 impl AppState {
     pub fn try_new(
         config: &Config,
-        cache: Cache,
+        cache: RedisCache,
     ) -> Result<Self, ApiError> {
         Ok(Self {
             cache: Arc::new(RwLock::new(cache)),
@@ -66,8 +66,8 @@ impl FromRef<AppState> for Arc<Config> {
     }
 }
 
-impl FromRef<AppState> for Arc<RwLock<Cache>> {
-    fn from_ref(app_state: &AppState) -> Arc<RwLock<Cache>> {
+impl FromRef<AppState> for Arc<RwLock<RedisCache>> {
+    fn from_ref(app_state: &AppState) -> Arc<RwLock<RedisCache>> {
         app_state.cache.clone()
     }
 }

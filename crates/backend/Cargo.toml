@@ -29,6 +29,8 @@ tower-http = { version = "0", features = [
     "set-header",
     "normalize-path",
 ] }
+# redis = { version = "0", features = ["tokio-comp", "tokio-native-tls-comp"] }
+deadpool-redis = { version = "0", features = ["cluster", "rt_tokio_1"]}
 tower = { version = "0", features = ["buffer"] }
 tower_governor = { version = "0", features = ["axum", "tracing"] }
 tokio-postgres = { version = "0", features = [
@@ -49,3 +51,4 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tracing = "*"
 github_scrapper = { path = "../github_scrapper" }
 async-recursion = "1"
+rand = "0.8.5"

@@ -1,4 +1,5 @@
 mod cache;
 pub mod errors;
 
-pub(crate) use cache::*;
+pub use cache::*;
+pub use errors::CacheError;
