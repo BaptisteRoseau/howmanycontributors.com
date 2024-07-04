@@ -42,10 +42,11 @@ pub struct PostgresDatabase {
 
 impl PostgresDatabase {
     pub(crate) async fn from(config: &Config) -> Result<Self, DatabaseError> {
+        debug!("Connecting to Postgres: {}", config.cache.urls.join(", "));
         let cfg = Self::parameters(config)?;
         let pool = cfg.create_pool(Some(Runtime::Tokio1), NoTls)?;
         if pool.get().await.is_err() {
-            warn!("Could not connect to database yet");
+            warn!("Could not connect to Postgres yet");
         } else {
             info!(
                 "Connected to Postgres {}:{}",

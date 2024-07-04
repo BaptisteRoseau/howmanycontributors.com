@@ -33,7 +33,7 @@ pub fn MainSearch(url: Option<String>) -> Element {
             let u = u.as_str();
             match dependencies(u).await {
                 Ok(deps) => {
-                    info!("{:?}", deps)
+                    debug!("{:?}", deps)
                 }
                 Err(e) => {
                     error!("Error Fetching dependencies: {:#?}", e);

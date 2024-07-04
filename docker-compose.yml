@@ -76,13 +76,13 @@ services:
       PROMETHEUS_IP: 0.0.0.0
       SWAGGER_IP: 0.0.0.0
       DEBUG: true
-      RUST_LOG: info
       CACHE_CLUSTER_URLS: redis://hmc-redis:6379/
       DATABASE_HOST: hmc-postgres
       DATABASE_PORT: 5432
       DATABASE_NAME: hmc
       DATABASE_USER: backend
       DATABASE_PASSWORD: password
+      RUST_LOG: RUST_LOG=warning,github_scrapper=debug,backend=debug
       RUST_BACKTRACE: 1
     networks:
       - hmc

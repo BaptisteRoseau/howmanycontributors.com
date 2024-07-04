@@ -118,7 +118,7 @@ async fn get_from_cache(link: &GitHubLink, state: AppState) -> Option<usize> {
     let guard = state.cache.read().await;
     match guard.get::<usize>(link.to_string().as_str()).await {
         Ok(contributors) => {
-            info!("Using cached value for {link}");
+            info!("Using cached contributors for {link}");
             Some(contributors)
         }
         Err(_) => None,

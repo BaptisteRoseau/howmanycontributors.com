@@ -27,7 +27,7 @@ pub(crate) fn public_routes(app_state: &AppState) -> Router {
     let interval = Duration::from_secs(60);
     std::thread::spawn(move || loop {
         std::thread::sleep(interval);
-        tracing::info!("Rate limiting storage size: {}", governor_limiter.len());
+        tracing::debug!("Rate limiting storage size: {}", governor_limiter.len());
         governor_limiter.retain_recent();
     });
 
