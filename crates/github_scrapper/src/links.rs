@@ -7,7 +7,7 @@ use crate::{errors::GitHubError, GitHubLinkDependencies};
 
 lazy_static! {
     static ref LINK_PATTERN: Regex =
-        Regex::new(r#"https://github.com/([a-zA-Z0-9_\.-]+)/([a-zA-Z0-9_\.-]+)"#).unwrap();
+        Regex::new(r#"^https?://github.com/([a-zA-Z0-9_\.-]{1,35})/([a-zA-Z0-9_\.-]{1,101})/?$"#).unwrap();
     static ref SPAN_SELECTOR: Selector = Selector::parse("span").unwrap();
 }
 
@@ -102,5 +102,43 @@ impl GitHubLink {
         }
 
         Ok(contributors.unwrap())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_valid_link() {
+        let link = GitHubLink::try_from("https://github.com/OWNER/REPO".to_string()).unwrap();
+        assert_eq!(link.link(), "https://github.com/OWNER/REPO");
+        assert_eq!(link.owner(), "OWNER");
+        assert_eq!(link.repo(), "REPO");
+        assert_eq!(link.path(), "OWNER/REPO");
+
+        assert!(GitHubLink::try_from("https://github.com/OWNER/REPO/".to_string()).is_ok());
+        assert!(GitHubLink::try_from("http://github.com/OWNER/REPO".to_string()).is_ok());
+    }
+
+    #[test]
+    fn test_invalid_link() {
+        assert!(GitHubLink::try_from("git://github.com/OWNER".to_string()).is_err());
+        assert!(GitHubLink::try_from("https://github.com/OWNER".to_string()).is_err());
+        assert!(GitHubLink::try_from("https://github.com//".to_string()).is_err());
+        assert!(
+            GitHubLink::try_from("https://github.com/OWNER/REPO/TOO_MUCH_DEPTH".to_string())
+                .is_err()
+        );
+        assert!(GitHubLink::try_from("https://github.com/$&*sad/??\"asd".to_string()).is_err());
+        assert!(GitHubLink::try_from("/OWNER/REPO".to_string()).is_err());
+        assert!(GitHubLink::try_from("OWNER/REPO".to_string()).is_err());
+        assert!(GitHubLink::try_from("".to_string()).is_err());
+    }
+
+    #[test]
+    fn test_format() {  
+        let link = GitHubLink::try_from("https://github.com/OWNER/REPO".to_string()).unwrap();
+        assert_eq!(format!("{}", link), "OWNER/REPO");
     }
 }

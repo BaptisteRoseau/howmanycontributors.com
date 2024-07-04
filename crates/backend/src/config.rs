@@ -26,6 +26,8 @@ const DEFAULT_DATABASE_PASSWORD: &str = "password";
 
 const DEFAULT_CONFIG_FILE_PATH: &str = ".config.yaml";
 
+const DEFAULT_LEADERBOARD_SIZE: usize = 500;
+
 /* ======================================================================================
 FULL CONFIG FROM USER
 ====================================================================================== */
@@ -71,6 +73,11 @@ struct CliConfig {
     /// Required in production.
     #[arg(long, env)]
     pub(crate) pem_pub_key: Option<PathBuf>,
+
+    /// The size of the leaderboard of the highest contributions's GitHub
+    /// repositories.
+    #[arg(long, env, default_value_t = DEFAULT_LEADERBOARD_SIZE)]
+    pub(crate) leaderboard_size: usize,
 
     /* ===============
     CACHE
@@ -223,6 +230,7 @@ pub(crate) struct Config {
     pub(crate) postgres: PostgresConfig,
     pub(crate) pem: Option<TlsConfig>,
     pub(crate) prometheus: Option<PrometheusConfig>,
+    pub(crate) leaderboard_size: usize,
 }
 
 impl Config {
@@ -278,6 +286,7 @@ impl TryFrom<CliConfig> for Config {
                 user: value.database_user,
                 password: value.database_password,
             },
+            leaderboard_size: value.leaderboard_size,
             prometheus,
             pem,
         })
@@ -331,6 +340,7 @@ mod test {
                 port: DEFAULT_PORT,
                 pem_priv_key: None,
                 pem_pub_key: None,
+                leaderboard_size: DEFAULT_LEADERBOARD_SIZE,
                 cache_cluster_urls: DEFAULT_CACHE_URLS.to_string(),
                 cache_user: DEFAULT_CACHE_USER.to_string(),
                 cache_password: DEFAULT_CACHE_PASSWORD.to_string(),

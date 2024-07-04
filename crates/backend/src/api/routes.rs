@@ -5,13 +5,13 @@ use axum_prometheus::metrics_exporter_prometheus::PrometheusHandle;
 use std::time::Duration;
 use std::{future::ready, sync::Arc};
 use tower::ServiceBuilder;
-use tower_governor::{governor::GovernorConfigBuilder};
+use tower_governor::governor::GovernorConfigBuilder;
 use tower_http::{
     compression::CompressionLayer, cors::CorsLayer, decompression::RequestDecompressionLayer,
     normalize_path::NormalizePathLayer, timeout::TimeoutLayer, trace::TraceLayer, CompressionLevel,
 };
 
-use super::endpoints::ws_handler_dependencies;
+use super::endpoints::{leaderboard, ws_handler_dependencies};
 
 const TIMEOUT_SEC: u64 = 20;
 
@@ -52,6 +52,7 @@ pub(crate) fn public_routes(app_state: &AppState) -> Router {
     Router::new()
         .route("/", get(ping))
         .route("/dependencies", get(ws_handler_dependencies))
+        .route("/leaderboard", get(leaderboard))
         .layer(middleware_service)
         .with_state(app_state.clone())
 }

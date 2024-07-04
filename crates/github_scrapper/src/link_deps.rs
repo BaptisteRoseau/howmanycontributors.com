@@ -1,5 +1,6 @@
 use lazy_static::lazy_static;
 use scraper::{Html, Selector};
+use tracing::error;
 
 use crate::utils::fetch_page;
 use crate::{GitHubError, GitHubLink};
@@ -9,6 +10,8 @@ lazy_static! {
         Selector::parse(r#"a[data-hovercard-type="dependendency_graph_package"]"#).unwrap();
     static ref PAGINATION_SELECTOR: Selector = Selector::parse(r#"em[class="current"]"#).unwrap();
 }
+
+const MAX_ERRORS: u8 = 5;
 
 /// An iterator over a [`GitHubLink`]'s dependencies.
 pub struct GitHubLinkDependencies {
@@ -20,6 +23,7 @@ pub struct GitHubLinkDependencies {
     number_of_items: Option<usize>,
     precomputed: Option<Vec<GitHubLink>>,
     precomputed_idx: usize,
+    errors: u8,
 }
 
 // Don't waste your time with Arc and RwLock, it does not fix the Websocket requirements
@@ -37,6 +41,7 @@ impl GitHubLinkDependencies {
             number_of_items: None,
             precomputed: None,
             precomputed_idx: 0,
+            errors: 0,
         }
     }
 
@@ -50,6 +55,7 @@ impl GitHubLinkDependencies {
             number_of_items: None,
             precomputed: Some(links),
             precomputed_idx: 0,
+            errors: 0,
         }
     }
 
@@ -60,13 +66,17 @@ impl GitHubLinkDependencies {
     /// Iterates over the next dependency. Can be used as follows:
     ///
     ///```rust
-    ///let link = GitHubLink::try_from("https://github.com/tokio-rs/tokio".to_string()).unwrap();
-    ///let mut dep_iterator = link.dependencies();
-    ///while let Some(dep) = dep_iterator.next().await {
-    ///    if let Ok(l) = dep {
-    ///        // Do something with l
-    ///    } else {
-    ///        eprintln!("Dependency fetching error: {}", dep.unwrap_err());
+    /// use github_scrapper::GitHubLink;
+    /// 
+    /// async fn example() {
+    ///    let link = GitHubLink::try_from("https://github.com/tokio-rs/tokio".to_string()).unwrap();
+    ///    let mut dep_iterator = link.dependencies();
+    ///    while let Some(dep) = dep_iterator.next().await {
+    ///        if let Ok(l) = dep {
+    ///            // Do something with l
+    ///        } else {
+    ///            eprintln!("Dependency fetching error: {}", dep.unwrap_err());
+    ///        }
     ///    }
     ///}
     ///```
@@ -79,6 +89,18 @@ impl GitHubLinkDependencies {
             self.precomputed_idx += 1;
             return Some(Ok(out.clone()));
         }
+        if self.errors > MAX_ERRORS {
+            error!(
+                "Got {} errors in a row, stopping fetch for {}",
+                &self.errors,
+                &self
+                    .link
+                    .as_ref()
+                    .map(|l| l.path())
+                    .unwrap_or("<Precomputed>".to_string())
+            );
+            return None;
+        }
 
         if self.current_html.is_none() {
             if self.number_of_pages.is_some() && self.page >= self.number_of_pages.unwrap() {
@@ -89,6 +111,7 @@ impl GitHubLinkDependencies {
             if let Ok(current_page) = fetched_html {
                 self.current_html = Some(current_page);
             } else {
+                self.errors += 1;
                 return Some(Err(fetched_html.unwrap_err()));
             }
         }
@@ -140,5 +163,32 @@ impl GitHubLinkDependencies {
             page
         );
         fetch_page(&link).await
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::GitHubLink;
+
+    #[tokio::test]
+    async fn test_precomputed() {
+        let links: Vec<GitHubLink> = vec![
+            GitHubLink::try_from("https://github.com/tokio-rs/tokio".to_string()).unwrap(),
+            GitHubLink::try_from("https://github.com/rust-lang/rust".to_string()).unwrap(),
+            GitHubLink::try_from("https://github.com/rust-lang/rustfmt".to_string()).unwrap(),
+            GitHubLink::try_from("https://github.com/rust-lang/rustc".to_string()).unwrap(),
+            GitHubLink::try_from("https://github.com/rust-lang/rustup".to_string()).unwrap(),
+            GitHubLink::try_from("https://github.com/rust-lang/rustfmt".to_string()).unwrap(),
+        ];
+
+        let mut iterator = GitHubLinkDependencies::from_precomputed(links.clone());
+
+        let mut output = vec![];
+        while let Some(link) = iterator.next().await {
+            output.push(link.unwrap())
+        }
+
+        assert_eq!(links, output);
     }
 }

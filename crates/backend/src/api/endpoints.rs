@@ -16,13 +16,20 @@ use std::collections::HashSet;
 use std::net::SocketAddr;
 use std::time::Duration;
 use std::usize;
-use tracing::{error, info, warn};
+use tracing::{debug, error, info, warn};
 
 //TODO: Add prometheus metrics when requesting to GitHub
 
 /// Health Check of the API
 pub(crate) async fn ping() -> &'static str {
     ""
+}
+
+/// Leaderboard of the repositories with the most contributors
+pub(crate) async fn leaderboard(State(state): State<AppState>) -> impl IntoResponse {
+    let guard = state.cache.read().await;
+    let leaderboard = guard.get_leaderboard().await.unwrap_or(vec![]);
+    axum::response::Json(leaderboard)
 }
 
 /// Websocket handler for the API
@@ -124,6 +131,7 @@ async fn set_to_cache(
     contributors: usize,
     state: AppState,
 ) -> Result<(), CacheError> {
+    insert_leaderboard(link, contributors, state.clone()).await;
     let mut guard = state.cache.write().await;
     let lifetime: Option<Duration>;
     {
@@ -210,6 +218,16 @@ async fn set_dependencies_to_database(
     {
         error!("Error setting repository {link} total contributors to database: {e}");
     };
+}
+
+async fn insert_leaderboard(link: &GitHubLink, contributors: usize, state: AppState) {
+    debug!("Inserting {link} in leaderboard with weight {contributors}");
+    let _ = state
+        .cache
+        .write()
+        .await
+        .set_leaderboard(link.path().as_str(), contributors as i32)
+        .await;
 }
 
 // async fn recursive_dependencies(
