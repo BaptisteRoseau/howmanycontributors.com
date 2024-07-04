@@ -2,11 +2,10 @@ use crate::{api::endpoints::ping, api::state::AppState};
 
 use axum::{routing::get, Router};
 use axum_prometheus::metrics_exporter_prometheus::PrometheusHandle;
-use std::net::SocketAddr;
 use std::time::Duration;
 use std::{future::ready, sync::Arc};
 use tower::ServiceBuilder;
-use tower_governor::{governor::GovernorConfigBuilder, GovernorLayer};
+use tower_governor::{governor::GovernorConfigBuilder};
 use tower_http::{
     compression::CompressionLayer, cors::CorsLayer, decompression::RequestDecompressionLayer,
     normalize_path::NormalizePathLayer, timeout::TimeoutLayer, trace::TraceLayer, CompressionLevel,

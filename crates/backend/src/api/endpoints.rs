@@ -14,7 +14,7 @@ use std::collections::HashSet;
 use std::net::SocketAddr;
 use std::time::Duration;
 use std::usize;
-use tracing::{debug, error, info, warn};
+use tracing::{error, info, warn};
 
 //TODO: Add cache support
 // - Search in cache first, add in cache if not found with random delay
@@ -95,12 +95,11 @@ pub(crate) async fn dependencies(
 
     let _ = socket.send(Message::Close(None)).await;
     let _ = socket.close();
-    return;
 }
 
 async fn get_from_cache(link: &GitHubLink, state: AppState) -> Option<usize> {
     let guard = state.cache.read().await;
-    match guard.get::<usize>(&link.to_string().as_str()).await {
+    match guard.get::<usize>(link.to_string().as_str()).await {
         Ok(contributors) => {
             info!("Using cached value for {link}");
             Some(contributors)

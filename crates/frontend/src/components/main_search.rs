@@ -10,7 +10,7 @@ pub fn MainSearch(url: Option<String>) -> Element {
     let mut running = use_signal(|| false);
     let mut url = use_signal(|| url.unwrap_or("".to_string()));
     let mut error_msg = use_signal(|| "");
-    let mut total_contributors = use_signal(|| 0 as usize);
+    let mut total_contributors = use_signal(|| 0_usize);
     //TODO: Table with hashmap of all results
 
     let onclick = move |_| {
@@ -24,7 +24,7 @@ pub fn MainSearch(url: Option<String>) -> Element {
         // See https://github.com/tokio-rs/axum/blob/main/examples/websockets/src/client.rs
         // for the websocket
 
-        Some(spawn(async move {
+        spawn(async move {
             total_contributors.set(0);
             running.set(true);
             button_disabled.set(true);
@@ -50,7 +50,7 @@ pub fn MainSearch(url: Option<String>) -> Element {
             };
             running.set(false);
             button_disabled.set(false);
-        }));
+        });
     };
 
     let onstop = move |_| {
@@ -92,7 +92,7 @@ pub fn MainSearch(url: Option<String>) -> Element {
                         " contributors"
                     }
                 }
-                if running.read().clone() {
+                if *running.read() {
                     button {
                         class: "cursor-pointer bg-red py-2 px-4 rounded-lg text-white border mt-4 disabled:bg-gray-300 disabled:text-gray-600",
                         "type": "submit",
