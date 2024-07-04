@@ -1,9 +1,9 @@
 use chrono::{DateTime, Utc};
 
-pub(crate) struct Repository {
+pub(crate) struct RepositoryInfo {
     pub name: String,
-    pub contributors: u32,
-    pub total_contributors: u32,
+    pub contributors: i64,
+    pub total_contributors: Option<u32>,
     pub dependencies: Vec<String>,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,

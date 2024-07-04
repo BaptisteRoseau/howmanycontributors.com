@@ -7,6 +7,7 @@ CREATE OR REPLACE FUNCTION update_modified_column()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = now();
+    NEW.valid_until = now() + make_interval(weeks => 1);
     RETURN NEW;
 END;
 $$ language 'plpgsql';
@@ -26,16 +27,16 @@ $$ language 'plpgsql';
 -- We use 150 to get a bit of margin
 
 CREATE TABLE repositories (
-    name                VARCHAR(150) UNIQUE NOT NULL,
+    path                VARCHAR(150) UNIQUE NOT NULL,
     contributors        INTEGER             NOT NULL,
     total_contributors  INTEGER,
     dependencies        VARCHAR(150) ARRAY,
     created_at  TIMESTAMP WITH TIME ZONE DEFAULT now(),
     updated_at  TIMESTAMP WITH TIME ZONE DEFAULT now(),
     valid_until TIMESTAMP WITH TIME ZONE DEFAULT now() + make_interval(weeks => 1),
-    PRIMARY KEY(name)
+    PRIMARY KEY(path)
 );
-CREATE INDEX index_repositories__name ON repositories(name);
+CREATE INDEX index_repositories__path ON repositories(path);
 CREATE INDEX index_repositories__created_at ON repositories(created_at);
 CREATE INDEX index_repositories__updated_at ON repositories(updated_at);
 CREATE OR REPLACE TRIGGER update_repositories__updated_at

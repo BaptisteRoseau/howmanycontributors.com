@@ -147,6 +147,16 @@ async fn get_from_cache_or_fetch(link: &GitHubLink, state: AppState) -> usize {
     }
 }
 
+async fn get_from_database(link: &GitHubLink, state: AppState) -> Option<usize> {
+    let guard = state.database.read().await;
+    todo!()
+}
+
+async fn set_to_database(link: &GitHubLink, state: AppState) -> Option<usize> {
+    let guard = state.database.read().await;
+    todo!()
+}
+
 // async fn recursive_dependencies(
 //     link: GitHubLink,
 //     dependencies: Arc<RwLock<HashMap<String, usize>>>,
