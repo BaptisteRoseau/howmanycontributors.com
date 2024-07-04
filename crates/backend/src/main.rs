@@ -5,6 +5,7 @@ mod cache;
 mod errors;
 mod models;
 mod program;
+mod database;
 use std::process::exit;
 
 #[tokio::main(flavor = "multi_thread")]

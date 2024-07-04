@@ -1,6 +1,5 @@
-use crate::{config::Config, cache::RedisCache};
+use crate::{cache::RedisCache, config::Config, database::database::PostgresDatabase};
 
-use axum::extract::FromRef;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
@@ -46,28 +45,19 @@ use super::errors::ApiError;
 pub(crate) struct AppState {
     pub cache: Arc<RwLock<RedisCache>>,
     pub config: Arc<Config>,
+    pub database: Arc<RwLock<PostgresDatabase>>,
 }
 
 impl AppState {
     pub fn try_new(
         config: &Config,
         cache: RedisCache,
+        database: PostgresDatabase,
     ) -> Result<Self, ApiError> {
         Ok(Self {
             cache: Arc::new(RwLock::new(cache)),
             config: Arc::new(config.clone()),
+            database: Arc::new(RwLock::new(database)),
         })
-    }
-}
-
-impl FromRef<AppState> for Arc<Config> {
-    fn from_ref(app_state: &AppState) -> Arc<Config> {
-        app_state.config.clone()
-    }
-}
-
-impl FromRef<AppState> for Arc<RwLock<RedisCache>> {
-    fn from_ref(app_state: &AppState) -> Arc<RwLock<RedisCache>> {
-        app_state.cache.clone()
     }
 }

@@ -78,6 +78,11 @@ services:
       DEBUG: true
       RUST_LOG: info
       CACHE_CLUSTER_URLS: redis://hmc-redis:6379/
+      DATABASE_HOST: hmc-postgres
+      DATABASE_PORT: 5432
+      DATABASE_NAME: hmc
+      DATABASE_USER: backend
+      DATABASE_PASSWORD: password
     networks:
       - hmc
     ports:

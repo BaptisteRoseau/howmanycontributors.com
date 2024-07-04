@@ -18,6 +18,12 @@ const DEFAULT_CACHE_PASSWORD: &str = "password";
 const DEFAULT_CACHE_VALIDITY_SEC_MIN: usize = 259200; // 3 days
 const DEFAULT_CACHE_VALIDITY_SEC_MAX: usize = 345600; // 4 days
 
+const DEFAULT_DATABASE_HOST: &str = "127.0.0.1";
+const DEFAULT_DATABASE_PORT: u16 = 5432;
+const DEFAULT_DATABASE_NAME: &str = "hmc";
+const DEFAULT_DATABASE_USER: &str = "backend";
+const DEFAULT_DATABASE_PASSWORD: &str = "password";
+
 const DEFAULT_CONFIG_FILE_PATH: &str = ".config.yaml";
 
 /* ======================================================================================
@@ -89,6 +95,29 @@ struct CliConfig {
     /// CACHE maximum Time To Live in seconds
     #[arg(long, env, default_value_t = DEFAULT_CACHE_VALIDITY_SEC_MAX)]
     pub(crate) cache_ttl_sec_max: usize,
+
+    /* ===============
+    DATABASE
+    ================ */
+    /// Database host
+    #[arg(long, env, default_value_t = DEFAULT_DATABASE_HOST.to_string())]
+    pub(crate) database_host: String,
+
+    /// Database port
+    #[arg(long, env, default_value_t = DEFAULT_DATABASE_PORT)]
+    pub(crate) database_port: u16,
+
+    /// Database name
+    #[arg(long, env, default_value_t = DEFAULT_DATABASE_NAME.to_string())]
+    pub(crate) database_name: String,
+
+    /// Database user
+    #[arg(long, env, default_value_t = DEFAULT_DATABASE_USER.to_string())]
+    pub(crate) database_user: String,
+
+    /// Database password
+    #[arg(long, env, default_value_t = DEFAULT_DATABASE_PASSWORD.to_string())]
+    pub(crate) database_password: String,
 
     /* ===============
     PROMETHEUS
@@ -171,6 +200,15 @@ pub(crate) struct TlsConfig {
     pub(crate) public_key: PathBuf,
 }
 
+#[derive(Debug, Clone)]
+pub(crate) struct PostgresConfig {
+    pub(crate) host: String,
+    pub(crate) port: u16,
+    pub(crate) database: String,
+    pub(crate) user: String,
+    pub(crate) password: String,
+}
+
 /// The main configuration.
 ///
 /// This struct is passed to the whole program to configure the server.
@@ -182,6 +220,7 @@ pub(crate) struct TlsConfig {
 pub(crate) struct Config {
     pub(crate) server: ServerBindingConfig,
     pub(crate) cache: Cache,
+    pub(crate) postgres: PostgresConfig,
     pub(crate) pem: Option<TlsConfig>,
     pub(crate) prometheus: Option<PrometheusConfig>,
 }
@@ -231,6 +270,13 @@ impl TryFrom<CliConfig> for Config {
                 password: value.cache_password,
                 ttl_sec_min: value.cache_ttl_sec_min,
                 ttl_sec_max: value.cache_ttl_sec_max,
+            },
+            postgres: PostgresConfig {
+                host: value.database_host,
+                port: value.database_port,
+                database: value.database_name,
+                user: value.database_user,
+                password: value.database_password,
             },
             prometheus,
             pem,
@@ -290,6 +336,11 @@ mod test {
                 cache_password: DEFAULT_CACHE_PASSWORD.to_string(),
                 cache_ttl_sec_min: DEFAULT_CACHE_VALIDITY_SEC_MIN,
                 cache_ttl_sec_max: DEFAULT_CACHE_VALIDITY_SEC_MAX,
+                database_host: DEFAULT_DATABASE_HOST.to_string(),
+                database_port: DEFAULT_DATABASE_PORT,
+                database_name: DEFAULT_DATABASE_NAME.to_string(),
+                database_user: DEFAULT_DATABASE_USER.to_string(),
+                database_password: DEFAULT_DATABASE_PASSWORD.to_string(),
                 prometheus_ip: DEFAULT_PROMETHEUS_IP,
                 prometheus_port: DEFAULT_PROMETHEUS_PORT,
                 no_prometheus: false,

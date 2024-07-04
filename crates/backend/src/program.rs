@@ -4,6 +4,7 @@ use crate::api::routes::{public_routes, try_metrics_routes};
 use crate::api::state::AppState;
 use crate::cache::RedisCache;
 use crate::config::Config;
+use crate::database::database::{PostgresDatabase, Database};
 use anyhow::Error;
 use axum::Router;
 use axum_prometheus::PrometheusMetricLayerBuilder;
@@ -19,8 +20,12 @@ pub(crate) async fn run(config: &Config) -> Result<(), anyhow::Error> {
     info!("Initializing Cache...");
     let cache = RedisCache::try_from(config).await?;
 
+    info!("Initializing Database...");
+    let mut database = PostgresDatabase::from(config).await?;
+    database.init(config).await?;
+
     info!("Initializing application state...");
-    let app_state = AppState::try_new(config, cache)?;
+    let app_state = AppState::try_new(config, cache, database)?;
 
     let mut servers = vec![];
 
