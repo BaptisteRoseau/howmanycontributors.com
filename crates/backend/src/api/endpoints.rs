@@ -106,7 +106,7 @@ pub(crate) async fn dependencies(
 
     let treated: Arc<RwLock<HashSet<GitHubLink>>> = Arc::new(RwLock::new(HashSet::new()));
 
-    match recursive_dependencies(link, treated, state, socket.clone()).await {
+    match dependencies_iterative(link, treated, state, socket.clone()).await {
         Ok(_) => {
             let _ = socket.lock().await.send(Message::Close(None)).await;
             // let _ = socket.into_inner().close().await;
@@ -122,91 +122,81 @@ enum RecDepError {
     Disconnected,
 }
 
-async fn recursive_dependencies(
-    link: GitHubLink,
+async fn dependencies_iterative(
+    initial_link: GitHubLink,
     treated: Arc<RwLock<HashSet<GitHubLink>>>,
     state: AppState,
     socket: Arc<Mutex<WebSocket>>,
 ) -> Result<(), RecDepError> {
-    let mut dependencies: Vec<GitHubLink> = vec![];
+    let mut stack = vec![initial_link];
 
-    if treated.write().await.insert(link.clone()) {
-        let contributors = cached_fetch(&link, state.clone()).await;
-        let chunk = ContributorsChunk::new(link.path(), contributors).to_string();
-        let chunk = format!("{chunk}\n");
-        if socket
-            .lock()
-            .await
-            .send(Message::Text(chunk))
-            .await
-            .is_err()
-        {
-            return Err(RecDepError::Disconnected);
-        }
-        counter!("ws_sent").increment(1);
-    }
+    while let Some(link) = stack.pop() {
+        let mut dependencies: HashSet<GitHubLink> = HashSet::new();
 
-    let mut dep_iterator: GitHubLinkDependencies = get_from_database(&link, state.clone())
-        .await
-        .and_then(|repo_info| dependencies_from_repository_info(&repo_info))
-        .map(GitHubLinkDependencies::from_precomputed)
-        .or(Some(link.dependencies()))
-        .expect("You fucked up.");
-
-    if dep_iterator.is_precomputed() {
-        info!("Using cached dependencies for {link}");
-        counter!("cache_hit", "status" => "hit", "from" => "dependencies").increment(1);
-    } else {
-        counter!("cache_hit", "status" => "miss", "from" => "dependencies").increment(1);
-    }
-
-    while let Some(dep) = dep_iterator.next().await {
-        if let Ok(l) = dep {
-            debug!("Found dependency {}", l.path());
-            dependencies.push(l.clone());
-            if treated.write().await.insert(l.clone()) {
-                debug!("{} not treated yet", l.path());
-                let contributors = cached_fetch(&l, state.clone()).await;
-                let chunk = ContributorsChunk::new(l.path(), contributors).to_string();
-                let chunk = format!("{chunk}\n");
-                if socket
-                    .lock()
-                    .await
-                    .send(Message::Text(chunk))
-                    .await
-                    .is_err()
-                {
-                    return Err(RecDepError::Disconnected);
-                }
-                counter!("ws_sent").increment(1);
-            } else {
-                debug!("{} already treated", l.path());
+        if treated.write().await.insert(link.clone()) {
+            let contributors = cached_fetch(&link, state.clone()).await;
+            let chunk = ContributorsChunk::new(link.path(), contributors).to_string();
+            let chunk = format!("{chunk}\n");
+            if socket
+                .lock()
+                .await
+                .send(Message::Text(chunk))
+                .await
+                .is_err()
+            {
+                return Err(RecDepError::Disconnected);
             }
+            counter!("ws_sent").increment(1);
+        }
+
+        let mut dep_iterator: GitHubLinkDependencies = get_from_database(&link, state.clone())
+            .await
+            .and_then(|repo_info| dependencies_from_repository_info(&repo_info))
+            .map(GitHubLinkDependencies::from_precomputed)
+            .or(Some(link.dependencies()))
+            .expect("You fucked up.");
+
+        if dep_iterator.is_precomputed() {
+            info!("Using cached dependencies for {link}");
+            counter!("cache_hit", "status" => "hit", "from" => "dependencies").increment(1);
         } else {
-            // No return because we actuall want to continue
-            error!("Dependency fetching error: {}", dep.unwrap_err());
-            counter!("errors").increment(1);
+            counter!("cache_hit", "status" => "miss", "from" => "dependencies").increment(1);
         }
-    }
 
-    if !dep_iterator.is_precomputed() {
-        set_dependencies_to_database(&link, &dependencies, state.clone()).await;
-    }
-
-    // Used here instead of the above loop to use horizontal tree scanning
-    // instead of vertical tree scanning.
-    for l in dependencies.into_iter() {
-        match Box::pin(recursive_dependencies(
-            l,
-            treated.clone(),
-            state.clone(),
-            socket.clone(),
-        ))
-        .await
-        {
-            Ok(_) => {}
-            Err(e) => return Err(e),
+        while let Some(dep) = dep_iterator.next().await {
+            if let Ok(l) = dep {
+                debug!("Found dependency {}", l.path());
+                dependencies.insert(l.clone());
+                if treated.write().await.insert(l.clone()) {
+                    debug!("{} not treated yet", l.path());
+                    let contributors = cached_fetch(&l, state.clone()).await;
+                    let chunk = ContributorsChunk::new(l.path(), contributors).to_string();
+                    let chunk = format!("{chunk}\n");
+                    if socket
+                        .lock()
+                        .await
+                        .send(Message::Text(chunk))
+                        .await
+                        .is_err()
+                    {
+                        return Err(RecDepError::Disconnected);
+                    }
+                    counter!("ws_sent").increment(1);
+                } else {
+                    debug!("{} already treated", l.path());
+                }
+            } else {
+                error!("Dependency fetching error: {}", dep.unwrap_err());
+                counter!("errors").increment(1);
+            }
         }
+
+        if !dep_iterator.is_precomputed() {
+            let vec: Vec<_> = dependencies.iter().cloned().collect();
+            set_dependencies_to_database(&link, &vec[..], state.clone()).await;
+        }
+
+        stack.extend(dependencies);
     }
 
     Ok(())
