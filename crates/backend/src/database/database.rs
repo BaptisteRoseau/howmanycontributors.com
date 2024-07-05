@@ -6,11 +6,11 @@ use deadpool_postgres::{Config as DpConfig, ManagerConfig, Pool, RecyclingMethod
 use github_scrapper::GitHubLink;
 use log::warn;
 use std::future::Future;
-use tokio_postgres::types::{ToSql};
+use tokio_postgres::types::ToSql;
 use tokio_postgres::{NoTls, Row};
 use tracing::{debug, info};
 
-// TODO: Require SSL when enabled in config & when using release config
+// TODO: Require SSL when communicating accross the internet
 
 #[axum::async_trait]
 pub trait Database {
