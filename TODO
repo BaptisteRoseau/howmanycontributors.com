@@ -9,7 +9,7 @@ Backend, for a given URL
 - [X] Cache results in a key/value Redis for 3 days + rand(1day) with: [OWNER/REPO, contributors, used_by]
 - [X] Search for dependencies at $URL/network/dependencies
 - [X] Repeat for each dependencies
-- [ ] Return the total of contributors and details of the dependencies
+- [X] Return the total of contributors and details of the dependencies
 - [ ] (WIP) Add a rate limiter per IP
 
 Frontend
@@ -26,10 +26,12 @@ Unnecessary but I like it:
 - [X] Prometheus
 - [X] Grafana
 - [ ] Loki
+- [ ] Leaderboard of most contributions per users (Kiki meters for the community) (After actually publishing the service)
 
 When finished:
 
 - [ ] SSL/TLS everywhere
+- [ ] Find how to import/export Grafana dashboards
 - [ ] ACL access for Redis
 - [ ] Remove dead code
 - [ ] Add tests

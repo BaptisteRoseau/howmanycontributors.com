@@ -113,7 +113,7 @@ impl GitHubLinkDependencies {
                 self.current_html = Some(current_page);
             } else {
                 self.errors += 1;
-                counter!("api_errors").increment(1);
+                counter!("errors").increment(1);
                 return Some(Err(fetched_html.unwrap_err()));
             }
         }
@@ -157,7 +157,7 @@ impl GitHubLinkDependencies {
     }
 
     async fn fetch_page(&self, page: usize) -> Result<Html, GitHubError> {
-        counter!("api_fetch", "type" => "dependencies").increment(1);
+        counter!("fetch", "type" => "dependencies").increment(1);
         let link = format!(
             "{}/network/dependencies?page={}",
             self.link.clone().unwrap().link(),

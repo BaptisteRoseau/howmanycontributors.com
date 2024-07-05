@@ -74,7 +74,7 @@ impl GitHubLink {
     /// The number of contributors displayed on the right side
     /// of the main page.
     pub async fn fetch_contributors(&self) -> Result<usize, GitHubError> {
-        counter!("api_fetch", "type" => "contributor").increment(1);
+        counter!("fetch", "type" => "contributor").increment(1);
         let html = self.fetch_main_page().await?;
         self.get_contributors_from_html(&html)
     }

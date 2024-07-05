@@ -9,7 +9,7 @@ use axum::{
     extract::ws::{Message, WebSocket, WebSocketUpgrade},
     response::IntoResponse,
 };
-use github_scrapper::{GitHubLink, GitHubLinkDependencies};
+use github_scrapper::{GitHubError, GitHubLink, GitHubLinkDependencies};
 use metrics::counter;
 use rand::{thread_rng, Rng};
 use std::borrow::Cow;
@@ -87,6 +87,20 @@ pub(crate) async fn dependencies(
         warn!("Invalid link: {}", link.link);
         return;
     };
+    if let Err(e) = link.fetch_contributors().await {
+        if matches!(e, GitHubError::NotFound(_)) {
+            let _ = socket
+                .lock()
+                .await
+                .send(Message::Close(Some(CloseFrame {
+                    code: axum::extract::ws::close_code::INVALID,
+                    reason: Cow::from("NOT_FOUND"),
+                })))
+                .await;
+            warn!("Repo does not exist: {}", link);
+            return;
+        }
+    }
 
     info!("Client {who} connected");
 
@@ -129,7 +143,7 @@ async fn recursive_dependencies(
         {
             return Err(RecDepError::Disconnected);
         }
-        counter!("api_ws_sent").increment(1);
+        counter!("ws_sent").increment(1);
     }
 
     let mut dep_iterator: GitHubLinkDependencies = get_from_database(&link, state.clone())
@@ -141,9 +155,9 @@ async fn recursive_dependencies(
 
     if dep_iterator.is_precomputed() {
         info!("Using cached dependencies for {link}");
-        counter!("api_cache_hit", "status" => "hit", "from" => "dependencies").increment(1);
+        counter!("cache_hit", "status" => "hit", "from" => "dependencies").increment(1);
     } else {
-        counter!("api_cache_hit", "status" => "miss", "from" => "dependencies").increment(1);
+        counter!("cache_hit", "status" => "miss", "from" => "dependencies").increment(1);
     }
 
     while let Some(dep) = dep_iterator.next().await {
@@ -164,14 +178,14 @@ async fn recursive_dependencies(
                 {
                     return Err(RecDepError::Disconnected);
                 }
-                counter!("api_ws_sent").increment(1);
+                counter!("ws_sent").increment(1);
             } else {
                 debug!("{} already treated", l.path());
             }
         } else {
             // No return because we actuall want to continue
             error!("Dependency fetching error: {}", dep.unwrap_err());
-            counter!("api_errors").increment(1);
+            counter!("errors").increment(1);
         }
     }
 
@@ -201,11 +215,11 @@ async fn recursive_dependencies(
 async fn cached_fetch(link: &GitHubLink, state: AppState) -> usize {
     match get_from_cache(link, state.clone()).await {
         Some(c) => {
-            counter!("api_cache_hit", "status" => "hit", "from" => "contributors").increment(1);
+            counter!("cache_hit", "status" => "hit", "from" => "contributors").increment(1);
             c
         }
         None => {
-            counter!("api_cache_hit", "status" => "miss", "from" => "contributors").increment(1);
+            counter!("cache_hit", "status" => "miss", "from" => "contributors").increment(1);
             let contributors = link.fetch_contributors().await.unwrap_or(1);
             let _ = set_to_cache(link, contributors, state.clone()).await;
             set_contributors_to_database(link, contributors, state).await;
@@ -251,7 +265,7 @@ async fn set_to_cache(
         }
         Err(e) => {
             error!("Error setting cached value for {link}:{contributors} {e}");
-            counter!("api_errors").increment(1);
+            counter!("errors").increment(1);
             Err(e)
         }
     }
@@ -274,7 +288,7 @@ async fn get_from_database(link: &GitHubLink, state: AppState) -> Option<Reposit
         Err(DatabaseError::NotFound(_)) => None,
         Err(e) => {
             error!("Error getting repository {link} info from database: {e:?}");
-            counter!("api_errors").increment(1);
+            counter!("errors").increment(1);
             None
         }
     }
@@ -303,7 +317,7 @@ async fn set_contributors_to_database(link: &GitHubLink, contributors: usize, st
         .await
     {
         error!("Error setting repository {link} contributors to database: {e}");
-        counter!("api_errors").increment(1);
+        counter!("errors").increment(1);
     };
 }
 
@@ -319,6 +333,6 @@ async fn set_dependencies_to_database(
         .await
     {
         error!("Error setting repository {link} total contributors to database: {e}");
-        counter!("api_errors").increment(1);
+        counter!("errors").increment(1);
     };
 }

@@ -82,7 +82,7 @@ services:
       DATABASE_NAME: hmc
       DATABASE_USER: backend
       DATABASE_PASSWORD: password
-      RUST_LOG: RUST_LOG=warning,github_scrapper=debug,backend=debug
+      RUST_LOG: RUST_LOG=warn,github_scrapper=debug,backend=debug
       RUST_BACKTRACE: 1
     networks:
       - hmc
