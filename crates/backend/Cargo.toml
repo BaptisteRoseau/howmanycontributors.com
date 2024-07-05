@@ -5,17 +5,36 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1"
-clap = { version = "4", features = ["derive", "env"] }
-log = "0"
-serde = { version = "1", features = ["derive"] }
-serde_yaml = "0"
-thiserror = "1"
-env_logger = "0"
-serde_json = "1"
-tokio = { version = "1.36", features = ["rt-multi-thread", "macros", "full"] }
-uuid = { version = "1.7", features = ["fast-rng", "serde", "v4"] }
+async-recursion = "1"
 axum = { version = "0", features = ["http1", "http2", "ws"] }
 axum-macros = "0"
+axum-prometheus = { version = "*", features = ["metrics-exporter-prometheus"] }
+chrono = { version = "0" }
+clap = { version = "4", features = ["derive", "env"] }
+deadpool-postgres = { version = "*" }
+deadpool-redis = { version = "0", features = ["cluster", "rt_tokio_1"] }
+env_logger = "0"
+github_scrapper = { path = "../github_scrapper" }
+jsonwebtoken = { version = "9", features = ["use_pem"] }
+log = "0"
+metrics = { version = "0" }
+metrics-exporter-prometheus = { version = "0", features = ["tokio"] }
+rand = "0.8.5"
+regex = { version = "*" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_yaml = "0"
+thiserror = "1"
+tokio = { version = "1.36", features = ["rt-multi-thread", "macros", "full"] }
+tokio-postgres = { version = "0", features = [
+    "with-uuid-1",
+    "with-serde_json-1",
+    "with-chrono-0_4",
+    "with-time-0_3",
+    "with-bit-vec-0_6",
+] }
+tower = { version = "0", features = ["buffer"] }
+tower_governor = { version = "0", features = ["axum", "tracing"] }
 tower-http = { version = "0", features = [
     "compression-gzip",
     "decompression-gzip",
@@ -29,26 +48,6 @@ tower-http = { version = "0", features = [
     "set-header",
     "normalize-path",
 ] }
-# redis = { version = "0", features = ["tokio-comp", "tokio-native-tls-comp"] }
-deadpool-redis = { version = "0", features = ["cluster", "rt_tokio_1"]}
-tower = { version = "0", features = ["buffer"] }
-tower_governor = { version = "0", features = ["axum", "tracing"] }
-tokio-postgres = { version = "0", features = [
-    "with-uuid-1",
-    "with-serde_json-1",
-    "with-chrono-0_4",
-    "with-time-0_3",
-    "with-bit-vec-0_6",
-] }
-chrono = { version = "0" }
-jsonwebtoken = { version = "9", features = ["use_pem"] }
-deadpool-postgres = { version = "*" }
-regex = { version = "*" }
-metrics = { version = "0" }
-metrics-exporter-prometheus = { version = "0", features = ["tokio"] }
-axum-prometheus = { version = "*", features = ["metrics-exporter-prometheus"] }
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tracing = "*"
-github_scrapper = { path = "../github_scrapper" }
-async-recursion = "1"
-rand = "0.8.5"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+uuid = { version = "1.7", features = ["fast-rng", "serde", "v4"] }
