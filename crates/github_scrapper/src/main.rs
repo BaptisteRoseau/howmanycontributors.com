@@ -1,6 +1,5 @@
 use async_recursion::async_recursion;
 use github_scrapper::GitHubLink;
-use std::collections::HashSet;
 use std::sync::Arc;
 use std::{collections::HashMap, process::exit};
 use tokio::sync::RwLock;
@@ -36,25 +35,25 @@ async fn recursive_dependencies(
     link: GitHubLink,
     dependencies: Arc<RwLock<HashMap<String, usize>>>,
 ) -> Arc<RwLock<HashMap<String, usize>>> {
-    let contributors = link.fetch_contributors().await.unwrap_or(1);
+    let contributors = match link.fetch_contributors().await {
+        Ok(c) => c,
+        Err(e) => {
+            error!("Error fetching contributors: {}", e);
+            1
+        }
+    };
     dependencies.write().await.insert(link.path(), contributors);
     let mut dep_iterator = link.dependencies();
-    let mut direct_deps: HashSet<GitHubLink> = HashSet::new();
     while let Some(dep) = dep_iterator.next().await {
         if let Ok(l) = dep {
             if !dependencies.read().await.contains_key(&l.path()) {
-                direct_deps.insert(l);
+                sleep(Duration::from_secs(1)).await;
+                recursive_dependencies(l, dependencies.clone()).await;
             }
         } else {
             error!("Dependency fetching error: {}", dep.unwrap_err());
         }
     }
 
-    // Used here instead of the above loop to use horizontal tree scanning
-    // instead of vertical tree scanning.
-    for l in direct_deps.into_iter() {
-        sleep(Duration::from_secs(1)).await;
-        recursive_dependencies(l, dependencies.clone()).await;
-    }
     dependencies
 }

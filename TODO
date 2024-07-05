@@ -31,6 +31,8 @@ Unnecessary but I like it:
 When finished:
 
 - [ ] SSL/TLS everywhere
+- [ ] Add a "Feedback" button
+- [ ] Post on Twitter & LinkedIn
 - [ ] Find how to import/export Grafana dashboards
 - [ ] ACL access for Redis
 - [ ] Remove dead code
