@@ -32,15 +32,10 @@ pub fn MainSearch(url: Option<String>) -> Element {
     let mut total_contributors = use_signal(|| 0_usize);
     let mut dependencies: Signal<HashMap<String, usize>> = use_signal(|| HashMap::new());
 
-    // For debug only
-    dependencies
-        .write()
-        .deref_mut()
-        .insert("test1".to_string(), 1);
-    dependencies
-        .write()
-        .deref_mut()
-        .insert("test2".to_string(), 2);
+    // dependencies
+    // .write()
+    // .deref_mut()
+    // .insert("test1".to_string(), 1);
 
     let onclick = move |_| {
         debug!("Button pressed with: {}", url.read());
@@ -54,7 +49,8 @@ pub fn MainSearch(url: Option<String>) -> Element {
         };
 
         // See https://github.com/tokio-rs/axum/blob/main/examples/websockets/src/client.rs
-        // for the websocket
+        // for the websocket and the nyou can focus on the design once it works !!
+        // Make a helper function like the one for REST requests.
 
         spawn(async move {
             total_contributors.set(0);

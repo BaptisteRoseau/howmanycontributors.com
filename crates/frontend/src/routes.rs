@@ -6,8 +6,8 @@ use dioxus::prelude::*;
 pub enum Routes {
     #[route("/")]
     Home {},
-    // #[route("/leaderboard")]
-    // Leaderboard {},
+    #[route("/leaderboard")]
+    Leaderboard {},
     #[route("/about")]
     About {},
 }

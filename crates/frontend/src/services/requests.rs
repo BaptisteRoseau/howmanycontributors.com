@@ -1,5 +1,6 @@
-use log::debug;
+use lazy_static::lazy_static;
 use serde::{de::DeserializeOwned, Serialize};
+use tracing::debug;
 
 use super::token::get_auth_token;
 use crate::error::Error;
@@ -8,28 +9,26 @@ use crate::models::ErrorInfo;
 // Allow to use .env file in debug mode
 
 #[cfg(debug_assertions)]
-const API_ROOT: &str = "my_endpoint";
+lazy_static! {
+    static ref API_ROOT: String  = std::env::var("API_ROOT").unwrap_or("http://127.0.0.1:8090".into());
+}
 
 // Use actual environment variable in release mode
 #[cfg(not(debug_assertions))]
-const API_ROOT: &str = std::env!(
+const API_ROOT: String = std::env!(
     "API_ROOT",
     "API_ROOT environment variable must be explicitly defined during compilation."
-);
+).to_string();
 
 /// build all kinds of http request: post/get/delete etc.
-pub async fn request<B, T>(
-    method: reqwest::Method,
-    url: String,
-    body: B,
-) -> Result<T, Error>
+pub async fn request<B, T>(method: reqwest::Method, url: String, body: B) -> Result<T, Error>
 where
     T: DeserializeOwned + 'static + std::fmt::Debug,
     B: Serialize + std::fmt::Debug,
 {
     let allow_body = method == reqwest::Method::POST || method == reqwest::Method::PUT;
-    debug!("{}", API_ROOT);
-    let url = format!("{}{}", API_ROOT, url);
+    let url = format!("{}{}", API_ROOT.as_str(), url);
+    debug!("{} {}", method, url);
     let mut builder = reqwest::Client::new()
         .request(method, url)
         .header("Content-Type", "application/json");
@@ -47,7 +46,7 @@ where
         if data.status().is_success() {
             let data: Result<T, _> = data.json::<T>().await;
             if let Ok(data) = data {
-                log::debug!("Response: {:?}", data);
+                debug!("Response: {:?}", data);
                 Ok(data)
             } else {
                 Err(Error::Deserialize)

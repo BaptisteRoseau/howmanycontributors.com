@@ -1,12 +1,13 @@
 use crate::assets::{Logo, Menu};
 use crate::components::ThemeSwitcher;
-use crate::hooks::ThemeHandler;
+use crate::hooks::{use_theme, ThemeHandler};
 use crate::routes::Routes;
 
 use dioxus::prelude::*;
 
 #[component]
-pub fn Header(theme: Signal<ThemeHandler>) -> Element {
+pub fn Header() -> Element {
+    let theme = use_theme();
     rsx! {
         header { class: "container",
             div { class: "mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8",
@@ -35,13 +36,13 @@ pub fn Header(theme: Signal<ThemeHandler>) -> Element {
                                         "About"
                                     }
                                 }
-                                // li {
-                                //     Link {
-                                //         to: Routes::Leaderboard {},
-                                //         class: "text-gray-500 transition hover:text-gray-500/75",
-                                //         "Leaderboard"
-                                //     }
-                                // }
+                                li {
+                                    Link {
+                                        to: Routes::Leaderboard {},
+                                        class: "text-gray-500 transition hover:text-gray-500/75",
+                                        "Leaderboard"
+                                    }
+                                }
                             }
                         }
                         ThemeSwitcher { theme },

@@ -1,15 +1,11 @@
-use crate::{
-    components::{Footer, Header, Hero, MainSearch},
-    hooks::use_theme,
-};
+use crate::components::{Footer, Header, Hero, MainSearch};
 
 use dioxus::prelude::*;
 
 #[component]
 pub fn Home(url: Option<String>) -> Element {
-    let theme = use_theme();
     rsx! {
-        Header { theme }
+        Header {  }
         Hero {}
         MainSearch { url }
         Footer {}
