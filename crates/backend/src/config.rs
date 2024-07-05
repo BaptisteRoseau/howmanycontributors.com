@@ -10,9 +10,9 @@ const LOCALHOST: IpAddr = IpAddr::V4(Ipv4Addr::new(127, 0, 0, 1));
 const DEFAULT_PORT: u16 = 6969;
 
 const DEFAULT_PROMETHEUS_IP: IpAddr = LOCALHOST;
-const DEFAULT_PROMETHEUS_PORT: u16 = 9090;
+const DEFAULT_PROMETHEUS_PORT: u16 = 9100;
 
-const DEFAULT_CACHE_URLS: &str = "redis://hmc-redis:6379/";
+const DEFAULT_CACHE_URLS: &str = "redis://127.0.0.1:6379/";
 const DEFAULT_CACHE_USER: &str = "backend";
 const DEFAULT_CACHE_PASSWORD: &str = "password";
 const DEFAULT_CACHE_VALIDITY_SEC_MIN: usize = 259200; // 3 days
@@ -20,7 +20,7 @@ const DEFAULT_CACHE_VALIDITY_SEC_MAX: usize = 345600; // 4 days
 
 const DEFAULT_DATABASE_HOST: &str = "127.0.0.1";
 const DEFAULT_DATABASE_PORT: u16 = 5432;
-const DEFAULT_DATABASE_NAME: &str = "hmc";
+const DEFAULT_DATABASE_NAME: &str = "database";
 const DEFAULT_DATABASE_USER: &str = "backend";
 const DEFAULT_DATABASE_PASSWORD: &str = "password";
 

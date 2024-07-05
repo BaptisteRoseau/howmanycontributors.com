@@ -89,7 +89,7 @@ services:
     ports:
       - "8090:24316"
       - "8091:7070"
-      - "8092:9090"
+      - "8092:9100"
     restart: always
     volumes:
       - ".:/src"
