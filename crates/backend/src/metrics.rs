@@ -1,5 +1,4 @@
-use log::debug;
-use metrics;
+use tracing::debug;
 
 // TODO: When splitting the codebase into multiple crates (cache/database),
 // this should be moved to the crates with a feature flag and within the "init" function

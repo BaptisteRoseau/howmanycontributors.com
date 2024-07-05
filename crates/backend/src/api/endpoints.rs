@@ -46,10 +46,6 @@ pub(crate) async fn ws_handler_dependencies(
     axum::extract::Query(link): axum::extract::Query<Link>,
 ) -> impl IntoResponse {
     ws.on_upgrade(move |socket| {
-        let state = state.clone();
-        let addr = addr.clone();
-        let link = link.clone();
-
         tokio::spawn(async move {
             let socket = Arc::new(Mutex::new(socket));
             dependencies(state, socket, addr, link).await;
@@ -103,9 +99,8 @@ pub(crate) async fn dependencies(
         }
         Err(RecDepError::Disconnected) => {
             info!("Client {who} disconnected");
-            return;
         }
-    };
+    }
 }
 
 enum RecDepError {
@@ -193,7 +188,7 @@ async fn recursive_dependencies(
         }
     }
 
-    return Ok(());
+    Ok(())
 }
 
 async fn cached_fetch(link: &GitHubLink, state: AppState) -> usize {
