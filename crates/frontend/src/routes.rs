@@ -1,4 +1,4 @@
-use crate::pages::{Home, About};
+use crate::pages::{Home, About, Leaderboard};
 
 use dioxus::prelude::*;
 
@@ -6,6 +6,8 @@ use dioxus::prelude::*;
 pub enum Routes {
     #[route("/")]
     Home {},
+    // #[route("/leaderboard")]
+    // Leaderboard {},
     #[route("/about")]
     About {},
 }

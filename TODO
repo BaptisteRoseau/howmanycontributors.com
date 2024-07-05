@@ -30,8 +30,9 @@ Unnecessary but I like it:
 
 When finished:
 
-- [ ] SSL/TLS everywhere
+- [ ] Add a button to get back to the top of the page
 - [ ] Add a "Feedback" button
+- [ ] SSL/TLS everywhere
 - [ ] Post on Twitter & LinkedIn
 - [ ] Find how to import/export Grafana dashboards
 - [ ] ACL access for Redis

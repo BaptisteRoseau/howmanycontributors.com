@@ -6,6 +6,7 @@ mod header;
 mod hero;
 mod theme_switcher;
 mod main_search;
+mod leaderboard;
 
 pub use alert::{AlertBannerGreen, AlertBannerRed};
 pub use buttons::{ActionButton, GoBackButton, LinkButton};
@@ -14,3 +15,4 @@ pub use header::Header;
 pub use hero::Hero;
 pub use theme_switcher::ThemeSwitcher;
 pub use main_search::MainSearch;
+pub use leaderboard::Leaderboard;

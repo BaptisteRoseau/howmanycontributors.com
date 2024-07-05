@@ -44,7 +44,6 @@ pub(crate) fn public_routes(app_state: &AppState) -> Router {
         .layer(CompressionLayer::new().quality(CompressionLevel::Best))
         .layer(RequestDecompressionLayer::new())
         // Rate Limiting per IP
-        // FIXME: Unable to extract key
         .layer(GovernorLayer {
             config: governor_conf,
         })

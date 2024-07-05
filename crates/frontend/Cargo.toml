@@ -16,6 +16,7 @@ gloo = "0"
 lazy_static = "1"
 log = "0"
 parking_lot = "0"
+regex = { version = "*" }
 reqwest = { version = "0", features = ["json"] }
 serde = "1"
 thiserror = "1"

@@ -35,6 +35,13 @@ pub fn Header(theme: Signal<ThemeHandler>) -> Element {
                                         "About"
                                     }
                                 }
+                                // li {
+                                //     Link {
+                                //         to: Routes::Leaderboard {},
+                                //         class: "text-gray-500 transition hover:text-gray-500/75",
+                                //         "Leaderboard"
+                                //     }
+                                // }
                             }
                         }
                         ThemeSwitcher { theme },
