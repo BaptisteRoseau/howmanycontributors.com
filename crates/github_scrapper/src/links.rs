@@ -2,7 +2,6 @@ use lazy_static::lazy_static;
 use metrics::counter;
 use regex::Regex;
 use scraper::{Html, Selector};
-use tracing::debug;
 
 use crate::utils::fetch_page;
 use crate::{errors::GitHubError, GitHubLinkDependencies};
@@ -105,7 +104,7 @@ impl GitHubLink {
             .text()
             .collect::<String>()
             .trim()
-            .replace(",", "")
+            .replace(',', "")
             .parse::<usize>();
         if contributors.is_err() {
             return Err(GitHubError::NoContributorsComponent(self.link.clone()));
