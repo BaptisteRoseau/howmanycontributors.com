@@ -14,10 +14,17 @@ use rand::{thread_rng, Rng};
 use std::borrow::Cow;
 use std::collections::HashSet;
 use std::net::SocketAddr;
+use std::sync::Arc;
 use std::time::Duration;
+use tokio::sync::{Mutex, RwLock};
+use tokio::time::sleep;
 use tracing::{debug, error, info, warn};
 
 //TODO: Add prometheus metrics when requesting to GitHub
+
+/// Sleep after a link has been fetched from GitHub
+/// This only applies on the current WS connection, not accross all connections.
+const SLEEP_BETWEEN_FETCHES: Duration = Duration::from_millis(750);
 
 /// Health Check of the API
 pub(crate) async fn ping() -> &'static str {
@@ -38,17 +45,35 @@ pub(crate) async fn ws_handler_dependencies(
     ConnectInfo(addr): ConnectInfo<SocketAddr>,
     axum::extract::Query(link): axum::extract::Query<Link>,
 ) -> impl IntoResponse {
-    ws.on_upgrade(move |socket| dependencies(state, socket, addr, link))
+    ws.on_upgrade(move |socket| {
+        let state = state.clone();
+        let addr = addr.clone();
+        let link = link.clone();
+
+        tokio::spawn(async move {
+            let socket = Arc::new(Mutex::new(socket));
+            dependencies(state, socket, addr, link).await;
+        });
+
+        async {}
+    })
 }
 
 pub(crate) async fn dependencies(
     state: AppState,
-    mut socket: WebSocket,
+    socket: Arc<Mutex<WebSocket>>,
     who: SocketAddr,
     link: Link,
 ) {
+    let socket = socket;
     // Handshake
-    if socket.send(Message::Ping(vec![1, 2, 3])).await.is_ok() {
+    if socket
+        .lock()
+        .await
+        .send(Message::Ping(vec![1, 2, 3]))
+        .await
+        .is_ok()
+    {
         info!("Client {who} wants to connect");
     } else {
         warn!("Could not ping {who}");
@@ -57,6 +82,8 @@ pub(crate) async fn dependencies(
 
     let Ok(link) = GitHubLink::try_from(link.link.clone()) else {
         let _ = socket
+            .lock()
+            .await
             .send(Message::Close(Some(CloseFrame {
                 code: axum::extract::ws::close_code::INVALID,
                 reason: Cow::from("INVALID_LINK"),
@@ -67,17 +94,47 @@ pub(crate) async fn dependencies(
 
     info!("Client {who} connected");
 
-    let mut treated: HashSet<GitHubLink> = HashSet::new();
-    let contributors = cached_fetch(&link, state.clone()).await;
-    treated.insert(link.clone());
-    let chunk = ContributorsChunk::new(link.path(), contributors).to_string();
-    let chunk = format!("{chunk}\n");
-    if socket.send(Message::Text(chunk)).await.is_err() {
-        info!("Client {who} disconnected");
-        return;
+    let treated: Arc<RwLock<HashSet<GitHubLink>>> = Arc::new(RwLock::new(HashSet::new()));
+
+    match recursive_dependencies(link, treated, state, socket.clone()).await {
+        Ok(_) => {
+            let _ = socket.lock().await.send(Message::Close(None)).await;
+            // let _ = socket.into_inner().close().await;
+        }
+        Err(RecDepError::Disconnected) => {
+            info!("Client {who} disconnected");
+            return;
+        }
+    };
+}
+
+enum RecDepError {
+    Disconnected,
+}
+
+async fn recursive_dependencies(
+    link: GitHubLink,
+    treated: Arc<RwLock<HashSet<GitHubLink>>>,
+    state: AppState,
+    socket: Arc<Mutex<WebSocket>>,
+) -> Result<(), RecDepError> {
+    let mut dependencies: Vec<GitHubLink> = vec![];
+
+    if treated.write().await.insert(link.clone()) {
+        let contributors = cached_fetch(&link, state.clone()).await;
+        let chunk = ContributorsChunk::new(link.path(), contributors).to_string();
+        let chunk = format!("{chunk}\n");
+        if socket
+            .lock()
+            .await
+            .send(Message::Text(chunk))
+            .await
+            .is_err()
+        {
+            return Err(RecDepError::Disconnected);
+        }
     }
 
-    let mut dependencies: Vec<GitHubLink> = vec![];
     let mut dep_iterator: GitHubLinkDependencies = get_from_database(&link, state.clone())
         .await
         .and_then(|repo_info| dependencies_from_repository_info(&repo_info))
@@ -91,17 +148,27 @@ pub(crate) async fn dependencies(
 
     while let Some(dep) = dep_iterator.next().await {
         if let Ok(l) = dep {
+            debug!("Found dependency {}", l.path());
             dependencies.push(l.clone());
-            if treated.insert(l.clone()) {
+            if treated.write().await.insert(l.clone()) {
+                debug!("{} not treated yet", l.path());
                 let contributors = cached_fetch(&l, state.clone()).await;
                 let chunk = ContributorsChunk::new(l.path(), contributors).to_string();
                 let chunk = format!("{chunk}\n");
-                if socket.send(Message::Text(chunk)).await.is_err() {
-                    info!("Client {who} disconnected");
-                    return;
+                if socket
+                    .lock()
+                    .await
+                    .send(Message::Text(chunk))
+                    .await
+                    .is_err()
+                {
+                    return Err(RecDepError::Disconnected);
                 }
+            } else {
+                debug!("{} already treated", l.path());
             }
         } else {
+            // No return because we actuall want to continue
             error!("Dependency fetching error: {}", dep.unwrap_err());
         }
     }
@@ -110,8 +177,37 @@ pub(crate) async fn dependencies(
         set_dependencies_to_database(&link, &dependencies, state.clone()).await;
     }
 
-    let _ = socket.send(Message::Close(None)).await;
-    let _ = socket.close().await;
+    // Used here instead of the above loop to use horizontal tree scanning
+    // instead of vertical tree scanning.
+    for l in dependencies.into_iter() {
+        match Box::pin(recursive_dependencies(
+            l,
+            treated.clone(),
+            state.clone(),
+            socket.clone(),
+        ))
+        .await
+        {
+            Ok(_) => {}
+            Err(e) => return Err(e),
+        }
+    }
+
+    return Ok(());
+}
+
+async fn cached_fetch(link: &GitHubLink, state: AppState) -> usize {
+    match get_from_cache(link, state.clone()).await {
+        Some(c) => c,
+        None => {
+            let contributors = link.fetch_contributors().await.unwrap_or(1);
+            let _ = set_to_cache(link, contributors, state.clone()).await;
+            set_contributors_to_database(link, contributors, state).await;
+            // To be respectfull with GitHub API rate limits
+            sleep(SLEEP_BETWEEN_FETCHES).await;
+            contributors
+        }
+    }
 }
 
 async fn get_from_cache(link: &GitHubLink, state: AppState) -> Option<usize> {
@@ -154,16 +250,14 @@ async fn set_to_cache(
     }
 }
 
-async fn cached_fetch(link: &GitHubLink, state: AppState) -> usize {
-    match get_from_cache(link, state.clone()).await {
-        Some(c) => c,
-        None => {
-            let contributors = link.fetch_contributors().await.unwrap_or(1);
-            let _ = set_to_cache(link, contributors, state.clone()).await;
-            set_contributors_to_database(link, contributors, state).await;
-            contributors
-        }
-    }
+async fn insert_leaderboard(link: &GitHubLink, contributors: usize, state: AppState) {
+    debug!("Inserting {link} in leaderboard with weight {contributors}");
+    let _ = state
+        .cache
+        .write()
+        .await
+        .set_leaderboard(link.path().as_str(), contributors as i32)
+        .await;
 }
 
 async fn get_from_database(link: &GitHubLink, state: AppState) -> Option<RepositoryInfo> {
@@ -218,40 +312,3 @@ async fn set_dependencies_to_database(
         error!("Error setting repository {link} total contributors to database: {e}");
     };
 }
-
-async fn insert_leaderboard(link: &GitHubLink, contributors: usize, state: AppState) {
-    debug!("Inserting {link} in leaderboard with weight {contributors}");
-    let _ = state
-        .cache
-        .write()
-        .await
-        .set_leaderboard(link.path().as_str(), contributors as i32)
-        .await;
-}
-
-// async fn recursive_dependencies(
-//     link: GitHubLink,
-//     dependencies: Arc<RwLock<HashMap<String, usize>>>,
-// ) -> Result<(), ()> {
-//     let contributors = link.fetch_contributors().await.unwrap_or(1);
-//     dependencies.write().await.insert(link.path(), contributors);
-//     let mut dep_iterator = link.dependencies();
-//     let mut direct_deps: HashSet<GitHubLink> = HashSet::new();
-//     while let Some(dep) = dep_iterator.next().await {
-//         if let Ok(l) = dep {
-//             if !dependencies.read().await.contains_key(&l.path()) {
-//                 direct_deps.insert(l);
-//             }
-//         } else {
-//             error!("Dependency fetching error: {}", dep.unwrap_err());
-//         }
-//     }
-
-//     // Used here instead of the above loop to use horizontal tree scanning
-//     // instead of vertical tree scanning.
-//     for l in direct_deps.into_iter() {
-//         sleep(Duration::from_secs(1)).await;
-//         let _ = Box::pin(recursive_dependencies(l, dependencies.clone())).await;
-//     }
-//     Ok(())
-// }

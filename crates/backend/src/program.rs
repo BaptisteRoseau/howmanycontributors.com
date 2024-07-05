@@ -17,6 +17,7 @@ pub(crate) async fn run(config: &Config) -> Result<(), anyhow::Error> {
     tracing_subscriber::registry()
         .with(tracing_subscriber::fmt::layer().with_filter(filter::EnvFilter::from_default_env()))
         .init();
+    crate::metrics::init();
     info!("Initializing Cache...");
     let cache = RedisCache::try_from(config).await?;
 

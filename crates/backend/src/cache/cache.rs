@@ -97,7 +97,6 @@ impl Cache for RedisCache {
             .arg(&[LEADERBOARD_KEY, "0", "-1", "WITHSCORES"])
             .query_async(&mut conn)
             .await?;
-        debug!("TESTS LEADERBOARD: REMOVE ME: {:?}", value);
         Ok(value)
     }
 
