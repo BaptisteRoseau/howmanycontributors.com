@@ -17,3 +17,4 @@ tokio = "1"
 tokio-stream = "0"
 tracing = "0"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+metrics = "0"

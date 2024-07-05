@@ -1,4 +1,5 @@
 use lazy_static::lazy_static;
+use metrics::counter;
 use scraper::{Html, Selector};
 use tracing::error;
 
@@ -112,6 +113,7 @@ impl GitHubLinkDependencies {
                 self.current_html = Some(current_page);
             } else {
                 self.errors += 1;
+                counter!("api_errors").increment(1);
                 return Some(Err(fetched_html.unwrap_err()));
             }
         }
@@ -155,6 +157,7 @@ impl GitHubLinkDependencies {
     }
 
     async fn fetch_page(&self, page: usize) -> Result<Html, GitHubError> {
+        counter!("api_fetch", "type" => "dependencies").increment(1);
         let link = format!(
             "{}/network/dependencies?page={}",
             self.link.clone().unwrap().link(),

@@ -28,11 +28,4 @@ pub fn init() {
         metrics::Unit::Count,
         "Count of errors."
     );
-
-    debug!("Initializing metrics: rate_limiter_size_mb");
-    metrics::describe_gauge!(
-        "rate_limiter_size_mb",
-        metrics::Unit::Count,
-        "The size in MB of the rate limiter."
-    );
 }

@@ -1,6 +1,7 @@
 use lazy_static::lazy_static;
 use regex::Regex;
 use scraper::{Html, Selector};
+use metrics::counter;
 
 use crate::utils::fetch_page;
 use crate::{errors::GitHubError, GitHubLinkDependencies};
@@ -73,6 +74,7 @@ impl GitHubLink {
     /// The number of contributors displayed on the right side
     /// of the main page.
     pub async fn fetch_contributors(&self) -> Result<usize, GitHubError> {
+        counter!("api_fetch", "type" => "contributor").increment(1);
         let html = self.fetch_main_page().await?;
         self.get_contributors_from_html(&html)
     }

@@ -1,6 +1,7 @@
 use crate::cache::errors::CacheError;
 use axum::{http::StatusCode, response::IntoResponse};
 use log::error;
+use metrics::counter;
 use serde::Serialize;
 use thiserror::Error;
 
@@ -95,6 +96,7 @@ impl From<anyhow::Error> for ApiErrorResponse {
 impl IntoResponse for ApiError {
     fn into_response(self) -> axum::response::Response {
         error!("API ERROR: {:?}", &self);
+        counter!("api_errors").increment(1);
         let api_error: ApiErrorResponse = self.into();
         api_error.into_response()
     }

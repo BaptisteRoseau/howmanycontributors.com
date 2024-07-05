@@ -10,6 +10,7 @@ use axum::{
     response::IntoResponse,
 };
 use github_scrapper::{GitHubLink, GitHubLinkDependencies};
+use metrics::counter;
 use rand::{thread_rng, Rng};
 use std::borrow::Cow;
 use std::collections::HashSet;
@@ -19,8 +20,6 @@ use std::time::Duration;
 use tokio::sync::{Mutex, RwLock};
 use tokio::time::sleep;
 use tracing::{debug, error, info, warn};
-
-//TODO: Add prometheus metrics when requesting to GitHub
 
 /// Sleep after a link has been fetched from GitHub
 /// This only applies on the current WS connection, not accross all connections.
@@ -85,6 +84,7 @@ pub(crate) async fn dependencies(
                 reason: Cow::from("INVALID_LINK"),
             })))
             .await;
+        warn!("Invalid link: {}", link.link);
         return;
     };
 
@@ -96,9 +96,10 @@ pub(crate) async fn dependencies(
         Ok(_) => {
             let _ = socket.lock().await.send(Message::Close(None)).await;
             // let _ = socket.into_inner().close().await;
+            info!("Client {who} end of session");
         }
         Err(RecDepError::Disconnected) => {
-            info!("Client {who} disconnected");
+            info!("Client {who} disconnected during session");
         }
     }
 }
@@ -128,6 +129,7 @@ async fn recursive_dependencies(
         {
             return Err(RecDepError::Disconnected);
         }
+        counter!("api_ws_sent").increment(1);
     }
 
     let mut dep_iterator: GitHubLinkDependencies = get_from_database(&link, state.clone())
@@ -139,6 +141,9 @@ async fn recursive_dependencies(
 
     if dep_iterator.is_precomputed() {
         info!("Using cached dependencies for {link}");
+        counter!("api_cache_hit", "status" => "hit", "from" => "dependencies").increment(1);
+    } else {
+        counter!("api_cache_hit", "status" => "miss", "from" => "dependencies").increment(1);
     }
 
     while let Some(dep) = dep_iterator.next().await {
@@ -159,12 +164,14 @@ async fn recursive_dependencies(
                 {
                     return Err(RecDepError::Disconnected);
                 }
+                counter!("api_ws_sent").increment(1);
             } else {
                 debug!("{} already treated", l.path());
             }
         } else {
             // No return because we actuall want to continue
             error!("Dependency fetching error: {}", dep.unwrap_err());
+            counter!("api_errors").increment(1);
         }
     }
 
@@ -193,8 +200,12 @@ async fn recursive_dependencies(
 
 async fn cached_fetch(link: &GitHubLink, state: AppState) -> usize {
     match get_from_cache(link, state.clone()).await {
-        Some(c) => c,
+        Some(c) => {
+            counter!("api_cache_hit", "status" => "hit", "from" => "contributors").increment(1);
+            c
+        }
         None => {
+            counter!("api_cache_hit", "status" => "miss", "from" => "contributors").increment(1);
             let contributors = link.fetch_contributors().await.unwrap_or(1);
             let _ = set_to_cache(link, contributors, state.clone()).await;
             set_contributors_to_database(link, contributors, state).await;
@@ -209,7 +220,7 @@ async fn get_from_cache(link: &GitHubLink, state: AppState) -> Option<usize> {
     let guard = state.cache.read().await;
     match guard.get::<usize>(link.to_string().as_str()).await {
         Ok(contributors) => {
-            info!("Using cached contributors for {link}");
+            debug!("Using cached contributors for {link}");
             Some(contributors)
         }
         Err(_) => None,
@@ -235,11 +246,12 @@ async fn set_to_cache(
         .await
     {
         Ok(_) => {
-            info!("Setting cached value for {link}:{contributors} {lifetime:?}");
+            debug!("Setting cached value for {link}:{contributors} {lifetime:?}");
             Ok(())
         }
         Err(e) => {
             error!("Error setting cached value for {link}:{contributors} {e}");
+            counter!("api_errors").increment(1);
             Err(e)
         }
     }
@@ -262,6 +274,7 @@ async fn get_from_database(link: &GitHubLink, state: AppState) -> Option<Reposit
         Err(DatabaseError::NotFound(_)) => None,
         Err(e) => {
             error!("Error getting repository {link} info from database: {e:?}");
+            counter!("api_errors").increment(1);
             None
         }
     }
@@ -283,13 +296,14 @@ fn dependencies_from_repository_info(info: &RepositoryInfo) -> Option<Vec<GitHub
 }
 
 async fn set_contributors_to_database(link: &GitHubLink, contributors: usize, state: AppState) {
-    info!("Saving {contributors} contributors for {link} in database");
+    debug!("Saving {contributors} contributors for {link} in database");
     let guard = state.database.write().await;
     if let Err(e) = guard
         .insert_repository_contributors(link, contributors as i32)
         .await
     {
         error!("Error setting repository {link} contributors to database: {e}");
+        counter!("api_errors").increment(1);
     };
 }
 
@@ -305,5 +319,6 @@ async fn set_dependencies_to_database(
         .await
     {
         error!("Error setting repository {link} total contributors to database: {e}");
+        counter!("api_errors").increment(1);
     };
 }
