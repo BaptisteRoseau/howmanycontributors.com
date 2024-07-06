@@ -8,6 +8,7 @@ pub fn Home(url: Option<String>) -> Element {
         Header {  }
         Hero {}
         MainSearch { url }
+        div { class: "flex flex-col h-100%" }
         Footer {}
     }
 }

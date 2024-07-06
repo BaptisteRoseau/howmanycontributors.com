@@ -10,44 +10,34 @@ pub fn Header() -> Element {
     let theme = use_theme();
     rsx! {
         header { class: "container",
-            div { class: "mx-auto max-w-screen-xl px-4 sm:px-6 lg:px-8",
-                div { class: "flex h-16 items-center justify-between",
-                    div { class: "md:flex md:items-center md:gap-12",
-                        Link { class: "block text-teal-600", to: Routes::Home {},
-                            span { class: "sr-only", "Home" }
-                            Logo {}
-                        }
-                    }
-                    div {
-                        class: "flex items-center gap-6 text-sm",
-                        nav { "aria-label": "Global",
-                            ul { class: "flex items-center gap-6 text-sm",
-                                li {
-                                    Link {
-                                        to: Routes::Home {},
-                                        class: "text-gray-500 transition hover:text-gray-500/75",
-                                        "Home"
-                                    }
-                                }
-                                li {
-                                    Link {
-                                        to: Routes::About {},
-                                        class: "text-gray-500 transition hover:text-gray-500/75",
-                                        "About"
-                                    }
-                                }
-                                li {
-                                    Link {
-                                        to: Routes::Leaderboard {},
-                                        class: "text-gray-500 transition hover:text-gray-500/75",
-                                        "Leaderboard"
-                                    }
-                                }
+            div { class: "mx-auto my-2 flex justify-center items-center gap-6",
+                nav { "aria-label": "Global",
+                    ul { class: "flex items-center gap-6 text-sm flex-1 md:text-md 2xl:text-lg",
+                        li {
+                            Link {
+                                to: Routes::Home {},
+                                class: "text-gray-700 transition-color hover:text-gray-700/75 dark:text-gray-300 dark:hover:text-gray-300/75",
+                                "Home"
                             }
                         }
-                        ThemeSwitcher { theme },
+                        li {
+                            Link {
+                                to: Routes::About {},
+                                class: "text-gray-700 transition-color hover:text-gray-700/75 dark:text-gray-300 dark:hover:text-gray-300/75",
+                                "About"
+                            }
+                        }
+                        li {
+                            Link {
+                                to: Routes::Leaderboard {},
+                                class: "text-gray-700 transition-color hover:text-gray-700/75 dark:text-gray-300 dark:hover:text-gray-300/75",
+                                "Leaderboard"
+                            }
+                        }
                     }
                 }
+                div {class: "border-l border-slate-200 dark:border-gray-500 h-6"}
+                ThemeSwitcher { theme }
             }
         }
     }
