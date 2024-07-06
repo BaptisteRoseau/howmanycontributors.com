@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use crate::services::get_leaderboard;
 use crate::{assets::Logo, error::Error};
 use crate::{assets::LogoText, routes::Routes};
@@ -8,14 +10,15 @@ use dioxus::prelude::*;
 #[component]
 pub fn Leaderboard() -> Element {
     let mut error_msg = use_signal(|| "");
-    let mut repositories: Signal<Vec<(String, i32)>> = use_signal(|| Vec::new());
+    let mut repositories: Signal<BTreeMap<usize, String>> = use_signal(|| BTreeMap::new());
 
     let fetch = move || {
         spawn(async move {
             match get_leaderboard().await {
                 Ok(mut leaderboard) => {
-                    leaderboard.sort_by(|a, b| b.1.cmp(&a.1));
-                    repositories.set(leaderboard);
+                    while let Some(item) = leaderboard.pop() {
+                        repositories.write().insert(item.1 as usize, item.0);
+                    }
                 }
                 Err(e) => {
                     error!("Error Fetching dependencies: {:#?}", e);
@@ -58,7 +61,7 @@ pub fn Leaderboard() -> Element {
                     }
                 }
                 tbody { class: "text-center",
-                    for (repository , contributors) in repositories.read().iter() {
+                for (contributors, repository) in repositories.read().iter().rev() {
                         tr { key: "{repository}", class: "border-b border-neutral-200 transition duration-300 ease-in-out hover:bg-neutral-100 dark:border-white/10 dark:hover:bg-neutral-600",
                             td { class: "text-right whitespace-nowrap px-6 py-4",
                                 a {

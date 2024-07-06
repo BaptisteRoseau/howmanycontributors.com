@@ -1,6 +1,8 @@
-use std::collections::HashMap;
-use std::ops::{Deref, DerefMut};
+use std::borrow::BorrowMut;
+use std::collections::{BTreeMap, HashMap};
+use std::ops::{Add, Deref, DerefMut};
 
+use crate::models::ContributorsChunk;
 use crate::services::get_dependencies;
 use crate::{assets::Logo, error::Error};
 
@@ -30,12 +32,9 @@ pub fn MainSearch(url: Option<String>) -> Element {
     let mut url = use_signal(|| url.unwrap_or("".to_string()));
     let mut error_msg = use_signal(|| "");
     let mut total_contributors = use_signal(|| 0_usize);
-    let mut dependencies: Signal<HashMap<String, usize>> = use_signal(|| HashMap::new());
+    let mut repositories: Signal<BTreeMap<usize, String>> = use_signal(|| BTreeMap::new());
 
-    // dependencies
-    // .write()
-    // .deref_mut()
-    // .insert("test1".to_string(), 1);
+    //TODO: A possibility to cancel the search
 
     let onclick = move |_| {
         debug!("Button pressed with: {}", url.read());
@@ -48,37 +47,32 @@ pub fn MainSearch(url: Option<String>) -> Element {
             return;
         };
 
-        // See https://github.com/tokio-rs/axum/blob/main/examples/websockets/src/client.rs
-        // for the websocket and the nyou can focus on the design once it works !!
-        // Make a helper function like the one for REST requests.
-
         spawn(async move {
-            total_contributors.set(0);
-            running.set(true);
-            button_disabled.set(true);
             error_msg.set("");
-            dependencies.write().deref_mut().clear();
+            total_contributors.set(0);
+            repositories.write().deref_mut().clear();
+            button_disabled.set(true);
+            running.set(true);
+
             let u = url.read();
             let u = u.as_str();
-            match get_dependencies(u).await {
-                Ok(deps) => {
-                    debug!("{:?}", deps)
-                }
-                Err(e) => {
-                    error!("Error Fetching dependencies: {:#?}", e);
-                    match e {
-                        Error::NotFound => {
-                            error_msg.set("This repository does not exist.");
-                        }
-                        _ => {
-                            error_msg.set("Whoops, something went wrong!");
-                            total_contributors.set(100);
-                        }
+            let handle_chunk = move |chunk: ContributorsChunk| {
+                total_contributors += chunk.contributors;
+                repositories.write().insert(chunk.contributors, chunk.path);
+            };
+            if let Err(e) = get_dependencies(u, handle_chunk) {
+                error!("Error Fetching dependencies: {:#?}", e);
+                match e {
+                    Error::NotFound => {
+                        error_msg.set("This repository does not exist.");
+                    }
+                    _ => {
+                        error_msg.set("Whoops, something went wrong!");
                     }
                 }
             };
-            running.set(false);
             button_disabled.set(false);
+            running.set(false);
         });
     };
 
@@ -103,32 +97,36 @@ pub fn MainSearch(url: Option<String>) -> Element {
                     oninput: move |event| url.set(event.value()),
                     maxlength: 300
                 }
-                button {
-                    class: "cursor-pointer bg-pri-500 py-2 px-4 rounded-lg text-white border mt-4 disabled:bg-gray-300 disabled:text-gray-600",
-                    "type": "submit",
-                    onclick: onclick,
-                    disabled: button_disabled,
-                    "Let's find out!"
+                div { class: "flex justify-center gap-2",
+                    button {
+                        class: "cursor-pointer bg-pri-500 py-2 px-4 rounded-lg text-white border mt-4 disabled:bg-gray-300 disabled:text-gray-600",
+                        "type": "submit",
+                        onclick: onclick,
+                        disabled: button_disabled,
+                        "Let's find out!"
+                    }
+                    if *running.read() {
+                        button {
+                            class: "cursor-pointer bg-red py-2 px-4 rounded-lg text-white border mt-4 disabled:bg-gray-300 disabled:text-gray-600",
+                            "type": "submit",
+                            onclick: onstop,
+                            disabled: !*running.read(),
+                            "Stop"
+                        }
+                    }
                 }
                 if *total_contributors.read() > 0 {
                     div { class: "text-center text-3xl w-full",
                         "Found "
                         strong { class: "text-9xl", "{total_contributors}" }
-                        " contributors"
-                    }
-                }
-                if *running.read() {
-                    button {
-                        class: "cursor-pointer bg-red py-2 px-4 rounded-lg text-white border mt-4 disabled:bg-gray-300 disabled:text-gray-600",
-                        "type": "submit",
-                        onclick: onstop,
-                        disabled: !*running.read(),
-                        "Stop"
+                        " contributors from "
+                        strong { class: "text-7xl", "{repositories.read().len()}" }
+                        " total dependencies !"
                     }
                 }
             }
         }
-        if !dependencies.read().is_empty() {
+        if !repositories.read().is_empty() {
             section { class: "container",
                 h2 { class: "text-center w-full mb-4 text-3xl font-extrabold leading-none tracking-tight text-gray-900 md:text-4xl lg:text-5xl dark:text-white",
                     "Dependencies Contributors"
@@ -141,7 +139,7 @@ pub fn MainSearch(url: Option<String>) -> Element {
                         }
                     }
                     tbody { class: "text-center",
-                        for (repository , contributors) in dependencies.read().iter() {
+                        for (contributors , repository) in repositories.read().iter().rev() {
                             tr { key: "{repository}", class: "border-b border-neutral-200 transition duration-300 ease-in-out hover:bg-neutral-100 dark:border-white/10 dark:hover:bg-neutral-600",
                                 td { class: "whitespace-nowrap px-6 py-4", "{repository}" }
                                 td { class: "whitespace-nowrap px-6 py-4", "{contributors}" }

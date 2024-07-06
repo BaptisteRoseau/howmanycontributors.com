@@ -20,9 +20,14 @@ regex = { version = "*" }
 reqwest = { version = "0", features = ["json"] }
 serde = "1"
 thiserror = "1"
-# tokio-tungstenite = "0"
 tracing = "0"
-web-sys = { version = "0", features = ["Window", "DomTokenList", "Element", "MediaQueryList"] }
+web-sys = { version = "0", features = [
+    "Window",
+    "DomTokenList",
+    "Element",
+    "MediaQueryList",
+    "WebSocket",
+] }
 
 [dev-dependencies]
 wasm-bindgen-test = { version = "0" }

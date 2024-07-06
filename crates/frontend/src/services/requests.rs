@@ -2,7 +2,6 @@ use lazy_static::lazy_static;
 use serde::{de::DeserializeOwned, Serialize};
 use tracing::debug;
 
-use super::token::get_auth_token;
 use crate::error::Error;
 use crate::models::ErrorInfo;
 
@@ -10,7 +9,8 @@ use crate::models::ErrorInfo;
 
 #[cfg(debug_assertions)]
 lazy_static! {
-    static ref API_ROOT: String  = std::env::var("API_ROOT").unwrap_or("http://127.0.0.1:8090".into());
+    pub(super) static ref API_ROOT: String =
+        std::env::var("API_ROOT").unwrap_or("http://127.0.0.1:8090".into());
 }
 
 // Use actual environment variable in release mode
@@ -18,23 +18,25 @@ lazy_static! {
 const API_ROOT: String = std::env!(
     "API_ROOT",
     "API_ROOT environment variable must be explicitly defined during compilation."
-).to_string();
+)
+.to_string();
 
 /// build all kinds of http request: post/get/delete etc.
-pub async fn request<B, T>(method: reqwest::Method, url: String, body: B) -> Result<T, Error>
+pub async fn request<B, T>(method: reqwest::Method, path: String, body: B) -> Result<T, Error>
 where
     T: DeserializeOwned + 'static + std::fmt::Debug,
     B: Serialize + std::fmt::Debug,
 {
+    assert!(
+        API_ROOT.starts_with("http"),
+        "API_ROOT must start with 'http'"
+    );
     let allow_body = method == reqwest::Method::POST || method == reqwest::Method::PUT;
-    let url = format!("{}{}", API_ROOT.as_str(), url);
+    let url = format!("{}{}", API_ROOT.as_str(), path);
     debug!("{} {}", method, url);
     let mut builder = reqwest::Client::new()
         .request(method, url)
         .header("Content-Type", "application/json");
-    if let Some(token) = get_auth_token() {
-        builder = builder.bearer_auth(token);
-    }
 
     if allow_body {
         builder = builder.json(&body);
@@ -74,37 +76,37 @@ where
 }
 
 /// Delete request
-pub async fn request_delete<T>(url: String) -> Result<T, Error>
+pub async fn request_delete<T>(path: String) -> Result<T, Error>
 where
     T: DeserializeOwned + 'static + std::fmt::Debug,
 {
-    request(reqwest::Method::DELETE, url, ()).await
+    request(reqwest::Method::DELETE, path, ()).await
 }
 
 /// Get request
-pub async fn request_get<T>(url: String) -> Result<T, Error>
+pub async fn request_get<T>(path: String) -> Result<T, Error>
 where
     T: DeserializeOwned + 'static + std::fmt::Debug,
 {
-    request(reqwest::Method::GET, url, ()).await
+    request(reqwest::Method::GET, path, ()).await
 }
 
 /// Post request with a body
-pub async fn request_post<B, T>(url: String, body: B) -> Result<T, Error>
+pub async fn request_post<B, T>(path: String, body: B) -> Result<T, Error>
 where
     T: DeserializeOwned + 'static + std::fmt::Debug,
     B: Serialize + std::fmt::Debug,
 {
-    request(reqwest::Method::POST, url, body).await
+    request(reqwest::Method::POST, path, body).await
 }
 
 /// Put request with a body
-pub async fn request_put<B, T>(url: String, body: B) -> Result<T, Error>
+pub async fn request_put<B, T>(path: String, body: B) -> Result<T, Error>
 where
     T: DeserializeOwned + 'static + std::fmt::Debug,
     B: Serialize + std::fmt::Debug,
 {
-    request(reqwest::Method::PUT, url, body).await
+    request(reqwest::Method::PUT, path, body).await
 }
 
 /// Set limit for pagination

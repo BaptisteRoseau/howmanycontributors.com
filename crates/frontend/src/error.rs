@@ -37,7 +37,16 @@ pub enum Error {
     /// A empty token was provided upon login
     #[error("Unexpected empty token")]
     EmptyToken,
+
+    /// An error occurred during the creation of the WebSocket
+    #[error("Error while creating the WebSocket")]
+    WebSocket,
+
+    /// The received chunk had an invalid format
+    #[error("The received chunk had an invalid format: {}", .0)]
+    InvalidChunkFormat(String),
 }
+
 
 //TODO: List backend error IDs as well.
 // Give then priority over status code.
