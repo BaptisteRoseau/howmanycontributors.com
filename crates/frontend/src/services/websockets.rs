@@ -77,7 +77,7 @@ impl ServiceWebsocket {
     /// ```
     pub fn set_onmessage<T>(&mut self, callback: T) -> &mut Self
     where
-        T: FnMut(MessageEvent) -> () + 'static,
+        T: FnMut(MessageEvent) + 'static,
     {
         let callback = Closure::wrap(Box::new(callback) as Box<dyn FnMut(MessageEvent)>);
         self.ws

@@ -10,7 +10,7 @@ use web_sys::MessageEvent;
 /// Get decks filtered by author
 pub fn get_dependencies<T>(link: &str, mut callback: T) -> Result<ServiceWebsocket, Error>
 where
-    T: FnMut(ContributorsChunk) -> () + 'static,
+    T: FnMut(ContributorsChunk) + 'static,
 {
     let mut ws = ServiceWebsocket::new(format!("/dependencies?link={}", link).as_str())?;
     ws.set_onmessage(move |e: MessageEvent| {

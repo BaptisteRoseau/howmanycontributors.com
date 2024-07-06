@@ -32,7 +32,7 @@ pub fn MainSearch(url: Option<String>) -> Element {
     let mut url = use_signal(|| url.unwrap_or("".to_string()));
     let mut error_msg = use_signal(|| "");
     let mut total_contributors = use_signal(|| 0_usize);
-    let mut repositories: Signal<BTreeMap<usize, String>> = use_signal(|| BTreeMap::new());
+    let mut repositories: Signal<BTreeMap<usize, String>> = use_signal(BTreeMap::new);
 
     //TODO: A possibility to cancel the search
 

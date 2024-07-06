@@ -10,7 +10,7 @@ use dioxus::prelude::*;
 #[component]
 pub fn Leaderboard() -> Element {
     let mut error_msg = use_signal(|| "");
-    let mut repositories: Signal<BTreeMap<usize, String>> = use_signal(|| BTreeMap::new());
+    let mut repositories: Signal<BTreeMap<usize, String>> = use_signal(BTreeMap::new);
 
     let fetch = move || {
         spawn(async move {
