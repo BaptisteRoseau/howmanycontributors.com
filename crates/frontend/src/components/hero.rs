@@ -17,7 +17,7 @@ pub fn Hero() -> Element {
                 }
                 p {
                     "When building a new project, we rely on software that relies on software that relies on software..."
-                    "Thousands of developpers enabled us to build our it!"
+                    "Thousands of developers enabled us to build our it!"
                 }
             }
         }

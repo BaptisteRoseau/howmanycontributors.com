@@ -22,16 +22,16 @@ pub fn Header() -> Element {
                         }
                         li {
                             Link {
-                                to: Routes::About {},
+                                to: Routes::Leaderboard {},
                                 class: "text-gray-700 transition-color hover:text-gray-700/75 dark:text-gray-300 dark:hover:text-gray-300/75",
-                                "About"
+                                "Leaderboard"
                             }
                         }
                         li {
                             Link {
-                                to: Routes::Leaderboard {},
+                                to: Routes::About {},
                                 class: "text-gray-700 transition-color hover:text-gray-700/75 dark:text-gray-300 dark:hover:text-gray-300/75",
-                                "Leaderboard"
+                                "About"
                             }
                         }
                     }

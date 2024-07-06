@@ -105,10 +105,8 @@ pub fn MainSearch(url: Option<String>) -> Element {
     rsx! {
         section { class: "container",
             div { class: "py-8 px-4 mx-auto max-w-screen-xl text-center lg:py-16 lg:px-12",
-                if !error_msg.read().is_empty() {
-                    h3 { class: "bg-opacity-80 border-red border-l-2 bg-slate-600 transition-transform duration-500 text-red text-center text-lg py-2 w-full",
-                        "{error_msg}"
-                    }
+                p { class: "mx-auto border-l-red-500 border-l-4 bg-opacity-80 bg-slate-200 text-red-700 text-center text-lg py-2 w-full dark:bg-slate-800",
+                    "{error_msg}"
                 }
                 input {
                     "type": "search",
@@ -161,7 +159,7 @@ pub fn MainSearch(url: Option<String>) -> Element {
                         }
                     }
                     tbody { class: "text-center",
-                        for (repository, contributors) in repositories.read().iter() {
+                        for (repository , contributors) in repositories.read().iter() {
                             tr { key: "{repository}", class: "border-b border-neutral-200 transition duration-300 ease-in-out hover:bg-neutral-100 dark:border-white/10 dark:hover:bg-neutral-600",
                                 td { class: "whitespace-nowrap px-6 py-4", "{repository}" }
                                 td { class: "whitespace-nowrap px-6 py-4", "{contributors}" }
