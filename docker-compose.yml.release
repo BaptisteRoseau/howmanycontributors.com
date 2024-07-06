@@ -4,6 +4,16 @@
 version: "3"
 
 services:
+  cache:
+    image: redis:7.2.5
+    container_name: hmc-redis
+    networks:
+      - hmc
+    restart: always
+    volumes:
+      - "hmc-cache:/data"
+      - "manifests/redis/redis.conf:/usr/local/etc/redis/redis.conf"
+
   database:
     image: postgres:16.2
     container_name: hmc-postgres
@@ -17,7 +27,7 @@ services:
       GRAFANA_USER: grafana
       GRAFANA_PASSWORD: password
       PGDATA: /var/lib/postgresql/data/pgdata
-      POSTGRES_HOST_AUTH_METHOD: trust # You should specify the mode and IP range in production
+      # POSTGRES_HOST_AUTH_METHOD: trust # You should specify the mode and IP range in production
     ports:
       - "5432:5432"
     restart: on-failure
@@ -35,7 +45,7 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: admin
     ports:
       - "3000:3000"
-    restart: on-failure
+    restart: always
     volumes:
       - "hmc-grafana:/var/lib/grafana"
 
@@ -46,65 +56,63 @@ services:
       - hmc
     ports:
       - "9090:9090"
-    restart: on-failure
+    restart: always
     volumes:
       - "hmc-prometheus:/prometheus"
       - ./manifests/prometheus:/etc/prometheus
 
   backend:
-    image: localhost/hmc-backend:latest
+    image: localhost/hmc-backend:latest-debug
     build:
       context: .
-      dockerfile: crates/backend/Dockerfile.release
+      dockerfile: crates/backend/Dockerfile.debug
       tags:
-        - "localhost/hmc-backend:latest"
+        - "localhost/hmc-backend:latest-debug"
     container_name: hmc-backend
-    networks:
-      - hmc
-    ports:
-      - "8090:24316"
-      - "8091:7070"
-      - "8092:9090"
-    restart: on-failure
     environment:
-      RUST_LOG: trace
-      IP: "0.0.0.0"
-      PROMETHEUS_IP: "0.0.0.0"
-      PROMETHEUS_PORT: 9100
+      IP: 0.0.0.0
+      PROMETHEUS_IP: 0.0.0.0
+      SWAGGER_IP: 0.0.0.0
+      DEBUG: true
+      CACHE_CLUSTER_URLS: redis://hmc-redis:6379/
       DATABASE_HOST: hmc-postgres
       DATABASE_PORT: 5432
       DATABASE_NAME: hmc
       DATABASE_USER: backend
       DATABASE_PASSWORD: password
-      PASSWORD_SALT: dfffb74900606896b2ff698026e43eab5b2df3762aa3faf8
-    command: ["--pem-priv-key", "/etc/backend/key.pem",
-              "--pem-pub-key", "/etc/backend/cert.pem",
-              "--debug", "--no-swagger"]
-    read_only: true
+      RUST_LOG: RUST_LOG=warn,github_scrapper=debug,backend=debug
+      RUST_BACKTRACE: 1
+    networks:
+      - hmc
+    ports:
+      - "8090:24316"
+      - "8091:7070"
+      - "8092:9100"
+    restart: always
     volumes:
-      - "./fixtures/certificates:/etc/backend:Z"
+      - ".:/src"
 
-
-  # frontend:
-  #   image: localhost/hmc-frontend:latest
-  #   build:
-  #     context: .
-  #     dockerfile: crates/frontend/Dockerfile.release
-  #     tags:
-  #       - "localhost/hmc-frontend:latest"
-  #   container_name: hmc-frontend
-  #   environment:
-  #     - API_ROOT=http://127.0.0.1:8090/
-  #   ports:
-  #     - "8080:8080"
-  #   restart: on-failure
-  #   read_only: true
-
+  frontend:
+    image: localhost/hmc-frontend:latest-debug
+    build:
+      context: .
+      dockerfile: crates/frontend/Dockerfile.debug
+      tags:
+        - "localhost/hmc-frontend:latest-debug"
+    container_name: hmc-frontend
+    environment:
+      - API_ROOT=http://127.0.0.1:8090/
+    ports:
+      - "8080:8080"
+    restart: always
+    volumes:
+      - ".:/src"
 
 networks:
   hmc:
 
 volumes:
+  hmc-cache:
   hmc-postgres:
   hmc-grafana:
   hmc-prometheus:

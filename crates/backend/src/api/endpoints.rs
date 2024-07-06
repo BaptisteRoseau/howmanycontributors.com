@@ -22,7 +22,7 @@ use tokio::time::sleep;
 use tracing::{debug, error, info, warn};
 
 /// Sleep after a link has been fetched from GitHub
-/// This only applies on the current WS connection, not accross all connections.
+/// This only applies on the current WS connection, not across all connections.
 const SLEEP_BETWEEN_FETCHES: Duration = Duration::from_millis(750);
 
 /// Health Check of the API
@@ -151,8 +151,7 @@ async fn dependencies_iterative(
 
         let mut dep_iterator: GitHubLinkDependencies = get_from_database(&link, state.clone())
             .await
-            .and_then(|repo_info| dependencies_from_repository_info(&repo_info))
-            .map(GitHubLinkDependencies::from_precomputed)
+            .and_then(|repo_info| dependencies_from_repository_info(&repo_info)).map(GitHubLinkDependencies::from_precomputed)
             .or(Some(link.dependencies()))
             .expect("You fucked up.");
 
@@ -213,7 +212,7 @@ async fn cached_fetch(link: &GitHubLink, state: AppState) -> usize {
             let contributors = link.fetch_contributors().await.unwrap_or(1);
             let _ = set_to_cache(link, contributors, state.clone()).await;
             set_contributors_to_database(link, contributors, state).await;
-            // To be respectfull with GitHub API rate limits
+            // To be respectful with GitHub API rate limits
             sleep(SLEEP_BETWEEN_FETCHES).await;
             contributors
         }
@@ -250,7 +249,7 @@ async fn set_to_cache(
         .await
     {
         Ok(_) => {
-            debug!("Setting cached value for {link}:{contributors} {lifetime:?}");
+            info!("Setting cached value for {link}:{contributors} {lifetime:?}");
             Ok(())
         }
         Err(e) => {
@@ -300,7 +299,7 @@ fn dependencies_from_repository_info(info: &RepositoryInfo) -> Option<Vec<GitHub
 }
 
 async fn set_contributors_to_database(link: &GitHubLink, contributors: usize, state: AppState) {
-    debug!("Saving {contributors} contributors for {link} in database");
+    info!("Saving {contributors} contributors for {link} in database");
     let guard = state.database.write().await;
     if let Err(e) = guard
         .insert_repository_contributors(link, contributors as i32)

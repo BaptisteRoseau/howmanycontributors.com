@@ -27,6 +27,7 @@
     "gloo",
     "Hasher",
     "hmc",
+    "Hostinger",
     "jsonwebtoken",
     "keyout",
     "kubeconfig",
@@ -65,6 +66,10 @@
     "thiserror",
     "toplevel",
     "utoipa",
-    "websockets"
+    "websockets",
+    "WITHSCORES",
+    "ZADD",
+    "ZRANGE",
+    "ZREMRANGEBYRANK"
   ]
 }

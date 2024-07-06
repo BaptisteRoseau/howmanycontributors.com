@@ -126,6 +126,21 @@ impl ServiceWebsocket {
         self
     }
 
+    /// Closes the websocket. No error checking is done.
+    pub fn is_open(&self) -> bool {
+        self.ws.ready_state() != web_sys::WebSocket::OPEN
+    }
+
+    /// Closes the websocket. No error checking is done.
+    pub fn close(&mut self) {
+        match self.ws.ready_state() {
+            web_sys::WebSocket::CLOSING | web_sys::WebSocket::CLOSED => (),
+            _ => {
+                let _ = self.ws.close();
+            }
+        }
+    }
+
     pub fn inner(&self) -> &WebSocket {
         &self.ws
     }

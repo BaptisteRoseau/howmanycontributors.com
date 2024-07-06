@@ -3,12 +3,13 @@ use std::collections::{BTreeMap, HashMap};
 use std::ops::{Add, Deref, DerefMut};
 
 use crate::models::ContributorsChunk;
-use crate::services::get_dependencies;
+use crate::services::{get_dependencies, ServiceWebsocket};
 use crate::{assets::Logo, error::Error};
 
 use dioxus::prelude::*;
 use lazy_static::lazy_static;
 use regex::Regex;
+use std::time::Duration;
 use tracing::{debug, error, info};
 
 lazy_static! {
@@ -29,12 +30,11 @@ fn is_link_valid(link: &str) -> bool {
 pub fn MainSearch(url: Option<String>) -> Element {
     let mut button_disabled = use_signal(|| false);
     let mut running = use_signal(|| false);
+    let mut should_stop = use_signal(|| false);
     let mut url = use_signal(|| url.unwrap_or("".to_string()));
     let mut error_msg = use_signal(|| "");
     let mut total_contributors = use_signal(|| 0_usize);
-    let mut repositories: Signal<BTreeMap<usize, String>> = use_signal(BTreeMap::new);
-
-    //TODO: A possibility to cancel the search
+    let mut repositories: Signal<Vec<(String, usize)>> = use_signal(Vec::new);
 
     let onclick = move |_| {
         debug!("Button pressed with: {}", url.read());
@@ -58,26 +58,48 @@ pub fn MainSearch(url: Option<String>) -> Element {
             let u = u.as_str();
             let handle_chunk = move |chunk: ContributorsChunk| {
                 total_contributors += chunk.contributors;
-                repositories.write().insert(chunk.contributors, chunk.path);
-            };
-            if let Err(e) = get_dependencies(u, handle_chunk) {
-                error!("Error Fetching dependencies: {:#?}", e);
-                match e {
-                    Error::NotFound => {
-                        error_msg.set("This repository does not exist.");
+                repositories.write().push((chunk.path, chunk.contributors));
+                repositories.write().deref_mut().sort_by(|a, b| {
+                    if b.1 != a.1 {
+                        b.1.cmp(&a.1)
+                    } else {
+                        b.0.cmp(&a.0)
                     }
-                    _ => {
-                        error_msg.set("Whoops, something went wrong!");
+                });
+            };
+            match get_dependencies(u, handle_chunk) {
+                Ok(ws) => {
+                    let _ = ws;
+                    // FIXME: Find a fucking working `sleep` function in WebAssembly...
+                    // while ws.is_open() && !*should_stop.read() {
+                    //     debug!("Awaiting stop");
+                    //     gloo::timers::future::sleep(Duration::from_millis(100)).await;
+                    // }
+                    // ws.close();
+                    // should_stop.set(false);
+                }
+                Err(e) => {
+                    error!("Error Fetching dependencies: {:#?}", e);
+                    match e {
+                        Error::NotFound => {
+                            error_msg.set("This repository does not exist.");
+                        }
+                        _ => {
+                            error_msg.set("Whoops, something went wrong!");
+                        }
                     }
                 }
             };
-            button_disabled.set(false);
-            running.set(false);
+            // Put back when `sleep` is working
+            // button_disabled.set(false);
+            // running.set(false);
         });
     };
 
     let onstop = move |_| {
         debug!("Cancel button pressed");
+        should_stop.set(true);
+        error_msg.set("Unfortunately, there is no sleep function is WebAssembly yet so the search cannot be canceled. Please refresh the page instead...");
     };
 
     rsx! {
@@ -139,7 +161,7 @@ pub fn MainSearch(url: Option<String>) -> Element {
                         }
                     }
                     tbody { class: "text-center",
-                        for (contributors , repository) in repositories.read().iter().rev() {
+                        for (repository, contributors) in repositories.read().iter() {
                             tr { key: "{repository}", class: "border-b border-neutral-200 transition duration-300 ease-in-out hover:bg-neutral-100 dark:border-white/10 dark:hover:bg-neutral-600",
                                 td { class: "whitespace-nowrap px-6 py-4", "{repository}" }
                                 td { class: "whitespace-nowrap px-6 py-4", "{contributors}" }

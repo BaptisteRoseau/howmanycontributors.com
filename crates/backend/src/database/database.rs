@@ -10,11 +10,10 @@ use tokio_postgres::types::ToSql;
 use tokio_postgres::{NoTls, Row};
 use tracing::{debug, info};
 
-// TODO: Require SSL when communicating accross the internet
+// TODO: Require SSL when communicating across the internet
 
 #[axum::async_trait]
 pub trait Database {
-    fn close(&mut self) -> impl Future<Output = Result<(), DatabaseError>> + Send;
     fn init(
         &mut self,
         config: &Config,
@@ -42,7 +41,7 @@ pub struct PostgresDatabase {
 
 impl PostgresDatabase {
     pub(crate) async fn from(config: &Config) -> Result<Self, DatabaseError> {
-        debug!("Connecting to Postgres: {}", config.cache.urls.join(", "));
+        info!("Connecting to Postgres: {}", config.cache.urls.join(", "));
         let cfg = Self::parameters(config)?;
         let pool = cfg.create_pool(Some(Runtime::Tokio1), NoTls)?;
         if pool.get().await.is_err() {
@@ -80,16 +79,6 @@ impl PostgresDatabase {
         Ok(row)
     }
 
-    async fn query_one<T: ToString>(
-        &self,
-        query: T,
-        params: &[&(dyn ToSql + Sync)],
-    ) -> Result<Row, DatabaseError> {
-        let client = self.pool.get().await?;
-        let row = client.query_one(query.to_string().as_str(), params).await?;
-        Ok(row)
-    }
-
     async fn execute_cached<T: ToString>(
         &self,
         query: T,
@@ -98,16 +87,6 @@ impl PostgresDatabase {
         let client = self.pool.get().await?;
         let statement = client.prepare_cached(query.to_string().as_str()).await?;
         Ok(client.execute(&statement, params).await?)
-    }
-
-    async fn execute<T: ToString>(
-        &self,
-        query: T,
-        params: &[&(dyn ToSql + Sync)],
-    ) -> Result<u64, DatabaseError> {
-        let client = self.pool.get().await?;
-        let affected = client.execute(query.to_string().as_str(), params).await?;
-        Ok(affected)
     }
 }
 
@@ -141,11 +120,6 @@ impl TryInto<RepositoryInfo> for Row {
 }
 
 impl Database for PostgresDatabase {
-    async fn close(&mut self) -> Result<(), DatabaseError> {
-        self.pool.close();
-        Ok(())
-    }
-
     async fn init(&mut self, config: &Config) -> Result<&mut Self, DatabaseError> {
         let _ = config;
         Ok(self)
@@ -167,7 +141,7 @@ impl Database for PostgresDatabase {
     ) -> Result<(), DatabaseError> {
         let path = link.path();
         let path = path.as_str();
-        debug!("Getting repository {} from database", path);
+        debug!("Setting {} contributors for repository {} in database", contributors, &path);
         self.execute_cached(
             "INSERT INTO repositories (path, contributors)
             VALUES ($1, $2)
@@ -190,7 +164,7 @@ impl Database for PostgresDatabase {
             .iter()
             .map(|l| l.path())
             .collect::<Vec<String>>();
-        debug!("Getting repository {} from database", path);
+        debug!("Setting {:?} dependencies for repository {} in database", &dependencies, path);
         self.execute_cached(
             "INSERT INTO repositories (path, dependencies)
             VALUES ($1, $2)

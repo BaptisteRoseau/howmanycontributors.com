@@ -3,11 +3,9 @@ use crate::config::Config;
 // use deadpool_redis::cluster::{Config as RedisConfig, Pool, Runtime};
 use deadpool_redis::redis::cmd;
 use deadpool_redis::{Config as RedisConfig, Pool, Runtime};
-use log::{debug, info};
+use log::info;
 use std::time::Duration;
 use tracing::warn;
-
-//I think you want "ZREMRANGEBYRANK [KEY] 0 -[YOURSIZE + 1]" to keep the [YOURSIZE] highest values
 
 const LEADERBOARD_KEY: &str = "leaderboard";
 
@@ -19,8 +17,6 @@ pub trait Cache {
         value: &T,
         lifetime: Option<Duration>,
     ) -> Result<bool, CacheError>;
-    async fn contains(&self, key: &str) -> Result<bool, CacheError>;
-    async fn remove(&mut self, key: &str) -> Result<bool, CacheError>;
     async fn get_leaderboard(&self) -> Result<Vec<(String, i32)>, CacheError>;
     async fn set_leaderboard(&mut self, key: &str, weight: i32) -> Result<(), CacheError>;
 }
@@ -32,7 +28,7 @@ pub(crate) struct RedisCache {
 
 impl RedisCache {
     pub(crate) async fn try_from(config: &Config) -> Result<Self, CacheError> {
-        debug!("Connecting to redis: {}", config.cache.urls.join(", "));
+        info!("Connecting to redis: {}", config.cache.urls.join(", "));
         let cfg = RedisConfig::from_url(config.cache.urls.first().unwrap());
         let pool = cfg.create_pool(Some(Runtime::Tokio1))?;
         if pool.get().await.is_err() {
@@ -77,18 +73,6 @@ impl Cache for RedisCache {
                 .await?;
         }
         Ok(true)
-    }
-
-    async fn contains(&self, key: &str) -> Result<bool, CacheError> {
-        let mut conn = self.pool.get().await?;
-        let value: bool = cmd("EXISTS").arg(&[key]).query_async(&mut conn).await?;
-        Ok(value)
-    }
-
-    async fn remove(&mut self, key: &str) -> Result<bool, CacheError> {
-        let mut conn = self.pool.get().await?;
-        let value: bool = cmd("DEL").arg(&[key]).query_async(&mut conn).await?;
-        Ok(value)
     }
 
     async fn get_leaderboard(&self) -> Result<Vec<(String, i32)>, CacheError> {

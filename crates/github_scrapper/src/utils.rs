@@ -1,10 +1,10 @@
 use scraper::Html;
-use tracing::debug;
+use tracing::info;
 
 use crate::GitHubError;
 
 pub(crate) async fn fetch_page(link: &str) -> Result<Html, GitHubError> {
-    debug!("Fetching: {}", link);
+    info!("Fetching: {}", link);
     let response = reqwest::get(link).await?;
 
     if response.status() == reqwest::StatusCode::NOT_FOUND {

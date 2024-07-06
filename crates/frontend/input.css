@@ -6,8 +6,16 @@
   @apply after:content-['*'] after:ml-0.5 after:text-red-500
 }
 
+
+/*
+/!\ /!\ /!\
+WHEN MODIFYING THE LAYOUT HERE,
+MODIFY THE tailwind.config.js ACCORDINGLY
+/!\ /!\ /!\
+*/
+
 .container {
-  @apply w-full mx-auto px-2 border border-[red];
+  @apply w-full mx-auto px-2 border border-red-400;
 }
 
 /* xs */
@@ -49,5 +57,12 @@
 @media (min-width: 1536px) {
   .container {
     @apply max-w-[1536px];
+  }
+}
+
+/* 3xl */
+@media (min-width: 2500px) {
+  .container {
+    @apply max-w-[2500px];
   }
 }

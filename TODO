@@ -10,15 +10,16 @@ Backend, for a given URL
 - [X] Search for dependencies at $URL/network/dependencies
 - [X] Repeat for each dependencies
 - [X] Return the total of contributors and details of the dependencies
-- [ ] (WIP) Add a rate limiter per IP
+- [X] Add a rate limiter per IP
 
 Frontend
 
 - [X] Add a field for the URL
-- [ ] Make sure the URL follows: http[s]://github.com/OWNER/REPO
+- [X] Make sure the URL follows: http[s]://github.com/OWNER/REPO
 - [ ] Display warnings about the data accuracy
+- [ ] Add an "About" page
 - [X] Show the total number of contributors in a big number
-- [ ] Show the details in a table
+- [X] Show the details in a table
 - [X] Add an error popup template
 
 Unnecessary but I like it:
@@ -28,6 +29,20 @@ Unnecessary but I like it:
 - [ ] Loki
 - [ ] Leaderboard of most contributions per users (Kiki meters for the community) (After actually publishing the service)
 
+Deploying the MVP:
+
+- [ ] Prettify the frontend just a bit
+- [X] Configure Redis RAM limitations
+- [X] Verify how to perform a 0-downtime update using docker-compose.yml (see command bellow)
+- [ ] Support HTTPS for both Frontend and Backend
+- [ ] Configure environment variables for secrets
+
+- [ ] Pay for a Hostinger server and a domain name (verify bandwidth is unlimited)
+- [ ] Install node Prometheus exporter
+- [ ] Close external connection for ports other that 80, 443, 22
+- [ ] Let's encrypt
+- [ ] Configure Loki Docker Plugin
+
 When finished:
 
 - [ ] Add a button to get back to the top of the page
@@ -35,15 +50,21 @@ When finished:
 - [ ] SSL/TLS everywhere
 - [ ] Post on Twitter & LinkedIn
 - [ ] Find how to import/export Grafana dashboards
-- [ ] ACL access for Redis
 - [ ] Remove dead code
 - [ ] Add tests
 - [ ] Add documentation
-- [ ] Add reverse-proxy to access the ressources
+- [ ] Add reverse-proxy to access the resources
 - [ ] Maybe familiarize yourself with Kubernetes
+- [ ] Google tag manager
 
 To test via curl:
 
 ```sh
 curl -v --include --no-buffer --header "Connection: Upgrade" --header "Upgrade: websocket" --header "Host: example.com:80" --header "Origin: http://example.com:80" --header "Sec-WebSocket-Key: SGVsbG8sIHdvcmxkIQ==" --header "Sec-WebSocket-Version: 13" http://localhost:8090/dependencies?link="https://github.com/tokio-rs/loom"
+```
+
+to deploy:
+
+```sh
+docker stack deploy --compose-file docker-compose.yml
 ```

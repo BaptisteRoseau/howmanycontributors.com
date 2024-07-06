@@ -12,7 +12,7 @@ chrono = { version = "0", features = ["serde"] }
 dioxus = { version = "0", features = ["web", "router"] }
 dioxus-logger = "0"
 dotenvy_macro = { version = "0" }
-gloo = "0"
+gloo = { version = "0", features = ["futures"] }
 lazy_static = "1"
 log = "0"
 parking_lot = "0"

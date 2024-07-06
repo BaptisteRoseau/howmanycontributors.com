@@ -14,7 +14,7 @@ services:
       - "6379:6379"
     volumes:
       - "hmc-cache:/data"
-    command: redis-server --save 60 1
+      - "./manifests/redis/redis.conf:/usr/local/etc/redis/redis.conf"
 
   database:
     image: postgres:16.2

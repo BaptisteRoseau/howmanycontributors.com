@@ -2,15 +2,16 @@ use crate::{api::endpoints::ping, api::state::AppState};
 
 use axum::{routing::get, Router};
 use axum_prometheus::metrics_exporter_prometheus::PrometheusHandle;
-use tower_governor::GovernorLayer;
 use std::time::Duration;
 use std::{future::ready, sync::Arc};
 use tower::ServiceBuilder;
 use tower_governor::governor::GovernorConfigBuilder;
+use tower_governor::GovernorLayer;
 use tower_http::{
     compression::CompressionLayer, cors::CorsLayer, decompression::RequestDecompressionLayer,
     normalize_path::NormalizePathLayer, timeout::TimeoutLayer, trace::TraceLayer, CompressionLevel,
 };
+use tracing::info;
 
 use super::endpoints::{leaderboard, ws_handler_dependencies};
 
@@ -25,10 +26,10 @@ pub(crate) fn public_routes(app_state: &AppState) -> Router {
             .unwrap(),
     );
     let governor_limiter = governor_conf.limiter().clone();
-    let interval = Duration::from_secs(60);
+    let interval = Duration::from_secs(600);
     std::thread::spawn(move || loop {
         std::thread::sleep(interval);
-        tracing::debug!("Rate limiting storage size: {}", governor_limiter.len());
+        info!("Rate limiting storage size: {}", governor_limiter.len());
         governor_limiter.retain_recent();
     });
 
