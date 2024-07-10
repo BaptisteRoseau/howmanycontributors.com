@@ -2,6 +2,7 @@ use std::borrow::BorrowMut;
 use std::collections::{BTreeMap, HashMap};
 use std::ops::{Add, Deref, DerefMut};
 
+use crate::components::RepositoriesTable;
 use crate::models::ContributorsChunk;
 use crate::services::{get_dependencies, ServiceWebsocket};
 use crate::{assets::Logo, error::Error};
@@ -112,7 +113,7 @@ pub fn MainSearch(url: Option<String>) -> Element {
                 }
                 input {
                     "type": "search",
-                    class: "p-2 bg-stone-300 border border-pri-300 rounded-lg w-full text-black",
+                    class: "p-2 border border-slate-500 rounded-lg w-full text-black",
                     id: "main_search",
                     placeholder: "https://github.com/owner/repository",
                     value: "{url}",
@@ -121,7 +122,7 @@ pub fn MainSearch(url: Option<String>) -> Element {
                 }
                 div { class: "flex justify-center gap-2",
                     button {
-                        class: "cursor-pointer bg-black py-2 px-4 rounded-lg text-white border mt-4 dark:border-black dark:bg-white dark:text-black disabled:bg-gray-300 disabled:text-gray-600 disabled:cursor-not-allowed",
+                        class: "cursor-pointer bg-pri-300 py-2 px-4 rounded-lg text-black mt-4 hover:bg-pri-400 disabled:bg-gray-300 disabled:text-gray-600 disabled:cursor-not-allowed",
                         "type": "submit",
                         onclick: onclick,
                         disabled: button_disabled,
@@ -153,28 +154,7 @@ pub fn MainSearch(url: Option<String>) -> Element {
                 h2 { class: "text-center w-full mb-4 text-3xl font-extrabold leading-none tracking-tight text-gray-900 md:text-4xl lg:text-5xl dark:text-white",
                     "Dependencies Contributors"
                 }
-                table { class: "table-auto text-center w-512ch mx-auto text-left text-sm font-light text-surface dark:text-white",
-                    thead { class: "text-center border-b border-neutral-200 font-medium dark:border-white/10",
-                        tr {
-                            th { scope: "col", class: "px-6 py-4", "Repository" }
-                            th { scope: "col", class: "px-6 py-4", "Contributors" }
-                        }
-                    }
-                    tbody { class: "text-center",
-                        for (repository , contributors) in repositories.read().iter() {
-                            tr { key: "{repository}", class: "border-b border-neutral-200 transition duration-300 ease-in-out hover:bg-neutral-100 dark:border-white/10 dark:hover:bg-neutral-600",
-                                td { class: "text-left whitespace-nowrap px-6 py-2",
-                                    a {
-                                        class: "hover:text-pri-500",
-                                        href: "https://github.com/{repository}",
-                                        "{repository}"
-                                    }
-                                }
-                                td { class: "whitespace-nowrap px-6 py-2", "{contributors}" }
-                            }
-                        }
-                    }
-                }
+                RepositoriesTable { repositories }
             }
         }
     }

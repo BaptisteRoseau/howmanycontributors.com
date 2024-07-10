@@ -1,3 +1,4 @@
+use crate::components::RepositoriesTable;
 use crate::services::get_leaderboard;
 use crate::{assets::Logo, error::Error};
 use crate::{assets::LogoText, routes::Routes};
@@ -28,51 +29,26 @@ pub fn Leaderboard() -> Element {
         });
     };
 
-    // Fetch results when going onto the page
-    use_effect(move || fetch());
+    // Fetch results when loading the page
+    use_effect(fetch);
 
     rsx! {
-        section { class: "container",
-            div { class: "py-8 px-4 mx-auto max-w-screen-xl text-center lg:py-16 lg:px-12",
-                h1 { class: "mb-4 text-4xl font-extrabold tracking-tight leading-none md:text-5xl lg:text-6xl",
-                    "Most Contributors"
-                }
-                h2 { class: "mb-8 text-lg font-normal lg:text-xl sm:px-16 xl:px-48",
-                    "What are the projects with the most contributors ?"
-                }
-                if !error_msg.read().is_empty() {
-                    p { class: "mx-auto border-l-red-500 border-l-4 bg-opacity-80 bg-slate-200 text-red-700 text-center text-lg py-2 w-full dark:bg-slate-800",
-                        "{error_msg}"
-                    }
-                }
-                table { class: "table-auto text-center w-512ch mx-auto text-left text-sm font-light text-surface dark:text-white",
-                    thead { class: "text-center border-b border-neutral-200 font-medium dark:border-white/10",
-                        tr {
-                            th { scope: "col", class: "px-6 py-4", "Rank" }
-                            th { scope: "col", class: "px-6 py-4", "Repository" }
-                            th { scope: "col", class: "px-6 py-4", "Contributors" }
-                        }
-                    }
-                    tbody { class: "text-center",
-                        for (idx, (repository , contributors)) in repositories.read().iter().enumerate() {
-                            tr { key: "{repository}", class: "border-b border-neutral-200 transition duration-300 ease-in-out hover:bg-neutral-100 dark:border-white/10 dark:hover:bg-neutral-600",
-                                td {
-                                    class: "text-left whitespace-nowrap px-6 py-2",
-                                    "#{idx}"
-                                }
-                                td { class: "text-left whitespace-nowrap px-6 py-2",
-                                    a {
-                                        class: "hover:text-pri-500",
-                                        href: "https://github.com/{repository}",
-                                        "{repository}"
-                                    }
-                                }
-                                td { class: "whitespace-nowrap px-6 py-2", "{contributors}" }
-                            }
-                        }
-                    }
+        section { class: "container py-8 px-4 mx-auto text-center lg:py-16 lg:px-12",
+            h1 { class: "mb-4 text-4xl font-extrabold tracking-tight leading-none md:text-5xl lg:text-6xl",
+                "Most Contributors"
+            }
+            h2 { class: "mb-2 text-lg font-normal lg:text-xl sm:px-16 xl:px-48",
+                "Top 500 of the projects with the most contributors!"
+            }
+            p { class: "mb-8 text-sm font-normal text-slate-400 dark:text-slate-600 lg:text-md sm:px-16 xl:px-48",
+                "*The repositories listed here are from previous searches."
+            }
+            if !error_msg.read().is_empty() {
+                p { class: "mx-auto border-l-red-500 border-l-4 bg-opacity-80 bg-slate-200 text-red-700 text-center text-lg py-2 w-full dark:bg-slate-800",
+                    "{error_msg}"
                 }
             }
+            RepositoriesTable { repositories }
         }
     }
 }

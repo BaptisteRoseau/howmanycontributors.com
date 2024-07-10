@@ -20,7 +20,7 @@ fn main() {
 fn App() -> Element {
     hooks::init_theme();
     rsx! {
-        div { class: "bg-slate-50 text-slate-900 dark:text-slate-50 dark:bg-slate-900",
+        div { class: "bg-light text-slate-950 dark:text-slate-50 dark:bg-dark",
             Router::<routes::Routes> {}
         }
     }
