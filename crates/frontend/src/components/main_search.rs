@@ -141,9 +141,9 @@ pub fn MainSearch(url: Option<String>) -> Element {
                 if *total_contributors.read() > 0 {
                     div { class: "text-center text-3xl w-full",
                         "Found "
-                        strong { class: "text-9xl", "{total_contributors}" }
+                        strong { class: "text-9xl text-pri-300 dark:text-pri-800", "{total_contributors}" }
                         " contributors from "
-                        strong { class: "text-7xl", "{repositories.read().len()}" }
+                        strong { class: "text-7xl text-sec-300 dark:text-sec-800", "{repositories.read().len()}" }
                         " total dependencies !"
                     }
                 }

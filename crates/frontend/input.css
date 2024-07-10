@@ -15,7 +15,7 @@ MODIFY THE tailwind.config.js ACCORDINGLY
 */
 
 .container {
-  @apply w-full mx-auto px-2 border border-red-400;
+  @apply w-full mx-auto px-2;
 }
 
 /* xs */

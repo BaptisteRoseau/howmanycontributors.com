@@ -5,7 +5,9 @@ use dioxus::prelude::*;
 #[component]
 pub fn About() -> Element {
     rsx! {
-        Header {}
-        Footer {}
+        body { class: "flex flex-col min-h-screen justify-between",
+            Header {}
+            Footer {}
+        }
     }
 }

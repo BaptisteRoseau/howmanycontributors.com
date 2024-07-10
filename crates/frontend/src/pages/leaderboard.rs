@@ -5,8 +5,12 @@ use dioxus::prelude::*;
 #[component]
 pub fn Leaderboard() -> Element {
     rsx! {
-        Header {}
-        LeaderboardComponent {}
-        Footer {}
+        body { class: "flex flex-col min-h-screen justify-between",
+            body {
+                Header {}
+                LeaderboardComponent {}
+            }
+            Footer {}
+        }
     }
 }

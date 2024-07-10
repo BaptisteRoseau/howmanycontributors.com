@@ -26,9 +26,8 @@ pub(crate) fn public_routes(app_state: &AppState) -> Router {
             .unwrap(),
     );
     let governor_limiter = governor_conf.limiter().clone();
-    let interval = Duration::from_secs(600);
     std::thread::spawn(move || loop {
-        std::thread::sleep(interval);
+        std::thread::sleep(Duration::from_secs(600));
         info!("Rate limiting storage size: {}", governor_limiter.len());
         governor_limiter.retain_recent();
     });

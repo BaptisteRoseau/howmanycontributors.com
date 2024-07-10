@@ -5,9 +5,14 @@ use dioxus::prelude::*;
 #[component]
 pub fn Home(url: Option<String>) -> Element {
     rsx! {
-        Header {  }
-        Hero {}
-        MainSearch { url }
-        Footer {}
+        body {
+            class: "flex flex-col min-h-screen justify-between",
+            body {
+                Header {  }
+                Hero {}
+                MainSearch { url }
+            }
+            Footer {}
+        }
     }
 }
