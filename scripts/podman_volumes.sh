@@ -61,3 +61,4 @@ function import_from() {
 }
 
 exit_on_missing_commands
+export_to /tmp/test.tar.gz

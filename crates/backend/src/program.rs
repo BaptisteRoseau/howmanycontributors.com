@@ -38,7 +38,7 @@ pub(crate) async fn run(config: &Config) -> Result<(), anyhow::Error> {
     if let Some(prometheus_config) = &config.prometheus {
         info!("Initializing Metrics handler...");
         let (prometheus_layer, metric_handle) = PrometheusMetricLayerBuilder::new()
-            .with_prefix("")
+            .with_prefix("server")
             .with_default_metrics()
             .build_pair();
 

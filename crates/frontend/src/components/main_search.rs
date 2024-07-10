@@ -105,8 +105,10 @@ pub fn MainSearch(url: Option<String>) -> Element {
     rsx! {
         section { class: "container",
             div { class: "py-8 px-4 mx-auto max-w-screen-xl text-center lg:py-16 lg:px-12",
-                p { class: "mx-auto border-l-red-500 border-l-4 bg-opacity-80 bg-slate-200 text-red-700 text-center text-lg py-2 w-full dark:bg-slate-800",
-                    "{error_msg}"
+                if !error_msg.read().is_empty() {
+                    p { class: "mx-auto border-l-red-500 border-l-4 bg-opacity-80 bg-slate-200 text-red-700 text-center text-lg py-2 w-full dark:bg-slate-800",
+                        "{error_msg}"
+                    }
                 }
                 input {
                     "type": "search",
@@ -119,7 +121,7 @@ pub fn MainSearch(url: Option<String>) -> Element {
                 }
                 div { class: "flex justify-center gap-2",
                     button {
-                        class: "cursor-pointer bg-pri-500 py-2 px-4 rounded-lg text-white border mt-4 disabled:bg-gray-300 disabled:text-gray-600",
+                        class: "cursor-pointer bg-black py-2 px-4 rounded-lg text-white border mt-4 dark:border-black dark:bg-white dark:text-black disabled:bg-gray-300 disabled:text-gray-600 disabled:cursor-not-allowed",
                         "type": "submit",
                         onclick: onclick,
                         disabled: button_disabled,
@@ -127,7 +129,7 @@ pub fn MainSearch(url: Option<String>) -> Element {
                     }
                     if *running.read() {
                         button {
-                            class: "cursor-pointer bg-red py-2 px-4 rounded-lg text-white border mt-4 disabled:bg-gray-300 disabled:text-gray-600",
+                            class: "cursor-pointer bg-red-500 py-2 px-4 rounded-lg text-white border mt-4 disabled:bg-gray-300 disabled:text-gray-600",
                             "type": "submit",
                             onclick: onstop,
                             disabled: !*running.read(),
@@ -151,7 +153,7 @@ pub fn MainSearch(url: Option<String>) -> Element {
                 h2 { class: "text-center w-full mb-4 text-3xl font-extrabold leading-none tracking-tight text-gray-900 md:text-4xl lg:text-5xl dark:text-white",
                     "Dependencies Contributors"
                 }
-                table { class: "table-auto text-center min-w-full mx-auto text-left text-sm font-light text-surface dark:text-white",
+                table { class: "table-auto text-center w-512ch mx-auto text-left text-sm font-light text-surface dark:text-white",
                     thead { class: "text-center border-b border-neutral-200 font-medium dark:border-white/10",
                         tr {
                             th { scope: "col", class: "px-6 py-4", "Repository" }
@@ -161,8 +163,14 @@ pub fn MainSearch(url: Option<String>) -> Element {
                     tbody { class: "text-center",
                         for (repository , contributors) in repositories.read().iter() {
                             tr { key: "{repository}", class: "border-b border-neutral-200 transition duration-300 ease-in-out hover:bg-neutral-100 dark:border-white/10 dark:hover:bg-neutral-600",
-                                td { class: "whitespace-nowrap px-6 py-4", "{repository}" }
-                                td { class: "whitespace-nowrap px-6 py-4", "{contributors}" }
+                                td { class: "text-left whitespace-nowrap px-6 py-2",
+                                    a {
+                                        class: "hover:text-pri-500",
+                                        href: "https://github.com/{repository}",
+                                        "{repository}"
+                                    }
+                                }
+                                td { class: "whitespace-nowrap px-6 py-2", "{contributors}" }
                             }
                         }
                     }

@@ -13,4 +13,4 @@ scrape_configs:
         target_label: __name__
         regex: '(.*)'
         action: replace
-        replacement: api${1}
+        replacement: api_${1}
