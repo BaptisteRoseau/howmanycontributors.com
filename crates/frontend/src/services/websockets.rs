@@ -129,6 +129,7 @@ impl ServiceWebsocket {
     /// Closes the websocket. No error checking is done.
     pub fn is_open(&self) -> bool {
         self.ws.ready_state() != web_sys::WebSocket::OPEN
+            || self.ws.ready_state() != web_sys::WebSocket::CONNECTING
     }
 
     /// Closes the websocket. No error checking is done.

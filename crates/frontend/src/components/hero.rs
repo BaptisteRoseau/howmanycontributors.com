@@ -6,7 +6,7 @@ use dioxus::prelude::*;
 pub fn Hero() -> Element {
     rsx! {
         section { class: "container",
-            div { class: "py-8 px-4 mx-auto max-w-screen-xl text-center lg:py-16 lg:px-12",
+            div { class: "pt-8 pb-4 px-4 mx-auto max-w-screen-xl text-center lg:py-16 lg:px-12",
                 h1 { class: "mb-4 text-4xl font-extrabold tracking-tight leading-none md:text-5xl lg:text-6xl",
                     "How Many Contributors ?"
                 }
@@ -17,7 +17,9 @@ pub fn Hero() -> Element {
                 }
                 p {
                     "When building a new project, we rely on software that relies on software that relies on software..."
-                    "Thousands of developers enabled us to build our it!"
+                    "Thousands of developers enabled us to build it!"
+                    br {}
+                    "This is you chance to know how many developers made your work possible."
                 }
             }
         }

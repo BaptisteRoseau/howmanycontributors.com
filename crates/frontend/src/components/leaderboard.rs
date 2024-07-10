@@ -38,13 +38,13 @@ pub fn Leaderboard() -> Element {
                 "Most Contributors"
             }
             h2 { class: "mb-2 text-lg font-normal lg:text-xl sm:px-16 xl:px-48",
-                "Top 500 of the projects with the most contributors!"
+                "Top 500 GitHub repositories with the most contributors!"
             }
             p { class: "mb-8 text-sm font-normal text-slate-400 dark:text-slate-600 lg:text-md sm:px-16 xl:px-48",
-                "*The repositories listed here are from previous searches."
+                "*The repositories listed here come from previous searches."
             }
             if !error_msg.read().is_empty() {
-                p { class: "mx-auto border-l-red-500 border-l-4 bg-opacity-80 bg-slate-200 text-red-700 text-center text-lg py-2 w-full dark:bg-slate-800",
+                p { class: "mb-4 mx-auto border-l-red-500 border-l-4 rounded-r-full bg-opacity-60 bg-slate-200 text-red-700 text-center text-lg py-2 w-full dark:bg-slate-900",
                     "{error_msg}"
                 }
             }

@@ -12,6 +12,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use std::time::Duration;
 use tracing::{debug, error, info};
+use gloo::timers::future::sleep;
 
 lazy_static! {
     static ref LINK_PATTERN: Regex =
@@ -69,15 +70,14 @@ pub fn MainSearch(url: Option<String>) -> Element {
                 });
             };
             match get_dependencies(u, handle_chunk) {
-                Ok(ws) => {
+                Ok(mut ws) => {
                     let _ = ws;
-                    // FIXME: Find a fucking working `sleep` function in WebAssembly...
-                    // while ws.is_open() && !*should_stop.read() {
-                    //     debug!("Awaiting stop");
-                    //     gloo::timers::future::sleep(Duration::from_millis(100)).await;
-                    // }
-                    // ws.close();
-                    // should_stop.set(false);
+                    debug!("Awaiting stop");
+                    while ws.is_open() && !*should_stop.read() {
+                        sleep(Duration::from_millis(200)).await;
+                    }
+                    ws.close();
+                    should_stop.set(false);
                 }
                 Err(e) => {
                     error!("Error Fetching dependencies: {:#?}", e);
@@ -91,23 +91,21 @@ pub fn MainSearch(url: Option<String>) -> Element {
                     }
                 }
             };
-            // Put back when `sleep` is working
-            // button_disabled.set(false);
-            // running.set(false);
+            button_disabled.set(false);
+            running.set(false);
         });
     };
 
     let onstop = move |_| {
         debug!("Cancel button pressed");
         should_stop.set(true);
-        error_msg.set("Unfortunately, there is no sleep function is WebAssembly yet so the search cannot be canceled. Please refresh the page instead...");
     };
 
     rsx! {
         section { class: "container",
-            div { class: "py-8 px-4 mx-auto max-w-screen-xl text-center lg:py-16 lg:px-12",
+            div { class: "px-4 mx-auto max-w-screen-xl text-center lg:px-12",
                 if !error_msg.read().is_empty() {
-                    p { class: "mx-auto border-l-red-500 border-l-4 bg-opacity-80 bg-slate-200 text-red-700 text-center text-lg py-2 w-full dark:bg-slate-800",
+                    p { class: "mb-4 mx-auto border-l-red-500 border-l-4 rounded-r-full bg-opacity-60 bg-slate-200 text-red-700 text-center text-lg py-2 w-full dark:bg-slate-900",
                         "{error_msg}"
                     }
                 }
@@ -122,7 +120,7 @@ pub fn MainSearch(url: Option<String>) -> Element {
                 }
                 div { class: "flex justify-center gap-2",
                     button {
-                        class: "cursor-pointer bg-pri-300 py-2 px-4 rounded-lg text-black mt-4 hover:bg-pri-400 disabled:bg-gray-300 disabled:text-gray-600 disabled:cursor-not-allowed",
+                        class: "cursor-pointer border border-slate-500 bg-slate-300 py-2 px-4 rounded-lg text-black mt-4 hover:bg-slate-400 disabled:bg-gray-300 disabled:text-gray-600 disabled:cursor-not-allowed",
                         "type": "submit",
                         onclick: onclick,
                         disabled: button_disabled,
