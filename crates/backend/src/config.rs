@@ -192,20 +192,12 @@ pub(crate) struct BindingConfig {
 #[derive(Debug, Clone)]
 pub(crate) struct Cache {
     pub(crate) urls: Vec<String>,
-    pub(crate) user: String,
-    pub(crate) password: String,
     pub(crate) ttl_sec_min: usize,
     pub(crate) ttl_sec_max: usize,
 }
 
 type ServerBindingConfig = BindingConfig;
 type PrometheusConfig = BindingConfig;
-
-#[derive(Debug, Clone)]
-pub(crate) struct TlsConfig {
-    pub(crate) private_key: PathBuf,
-    pub(crate) public_key: PathBuf,
-}
 
 #[derive(Debug, Clone)]
 pub(crate) struct PostgresConfig {
@@ -228,7 +220,6 @@ pub(crate) struct Config {
     pub(crate) server: ServerBindingConfig,
     pub(crate) cache: Cache,
     pub(crate) postgres: PostgresConfig,
-    pub(crate) pem: Option<TlsConfig>,
     pub(crate) prometheus: Option<PrometheusConfig>,
     pub(crate) leaderboard_size: usize,
 }
@@ -254,15 +245,6 @@ impl TryFrom<CliConfig> for Config {
             })
         };
 
-        let pem = if value.pem_priv_key.is_some() && value.pem_pub_key.is_some() {
-            Some(TlsConfig {
-                private_key: value.pem_priv_key.unwrap(),
-                public_key: value.pem_pub_key.unwrap(),
-            })
-        } else {
-            None
-        };
-
         Ok(Self {
             server: ServerBindingConfig {
                 ip: value.ip,
@@ -274,8 +256,6 @@ impl TryFrom<CliConfig> for Config {
                     .split(',')
                     .map(String::from)
                     .collect::<Vec<_>>(),
-                user: value.cache_user,
-                password: value.cache_password,
                 ttl_sec_min: value.cache_ttl_sec_min,
                 ttl_sec_max: value.cache_ttl_sec_max,
             },
@@ -288,7 +268,6 @@ impl TryFrom<CliConfig> for Config {
             },
             leaderboard_size: value.leaderboard_size,
             prometheus,
-            pem,
         })
     }
 }
