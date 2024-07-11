@@ -62,18 +62,6 @@ struct CliConfig {
     #[arg(short, long, env, default_value_t = DEFAULT_PORT)]
     pub(crate) port: u16,
 
-    /// The PEM private key file used for HTTPS and JWT.
-    /// If not provided, default to HTTP and static token for JWT.
-    /// Required in production.
-    #[arg(long, env)]
-    pub(crate) pem_priv_key: Option<PathBuf>,
-
-    /// The PEM public key file used for HTTPS and JWT
-    /// If not provided, default to HTTP and static token for JWT.
-    /// Required in production.
-    #[arg(long, env)]
-    pub(crate) pem_pub_key: Option<PathBuf>,
-
     /// The size of the leaderboard of the highest contributions's GitHub
     /// repositories.
     #[arg(long, env, default_value_t = DEFAULT_LEADERBOARD_SIZE)]
@@ -279,16 +267,6 @@ impl Config {
     /// if the server is in production mode.
     fn validate(cli_config: &CliConfig) -> Result<(), ConfigParsingError> {
         // Errors
-        if cli_config.pem_priv_key.is_some() && cli_config.pem_pub_key.is_none() {
-            return Err(ConfigParsingError::MissingPemPubCert);
-        }
-        if cli_config.pem_priv_key.is_none() && cli_config.pem_pub_key.is_some() {
-            return Err(ConfigParsingError::MissingPemPrivKey);
-        }
-        #[cfg(not(debug_assertions))]
-        if cli_config.password_salt == String::from(DEFAULT_SALT) {
-            return Err(ConfigParsingError::DefaultPasswordSaltInReleaseMode);
-        }
         if cli_config.cache_ttl_sec_max < cli_config.cache_ttl_sec_min {
             return Err(ConfigParsingError::Error(
                 "Cache TTL max must be greater or equal to min".to_string(),
@@ -317,8 +295,6 @@ mod test {
                 config: None,
                 ip: LOCALHOST,
                 port: DEFAULT_PORT,
-                pem_priv_key: None,
-                pem_pub_key: None,
                 leaderboard_size: DEFAULT_LEADERBOARD_SIZE,
                 cache_cluster_urls: DEFAULT_CACHE_URLS.to_string(),
                 cache_user: DEFAULT_CACHE_USER.to_string(),
@@ -335,36 +311,6 @@ mod test {
                 no_prometheus: false,
             }
         }
-    }
-
-    #[test]
-    fn test_validate_missing_pem_pub_cert() {
-        let mut cli_config = CliConfig::default();
-        cli_config.pem_priv_key = Some(PathBuf::from("private_key.pem"));
-        cli_config.pem_pub_key = None;
-
-        let result = Config::validate(&cli_config);
-
-        assert!(result.is_err());
-        assert!(matches!(
-            result.unwrap_err(),
-            ConfigParsingError::MissingPemPubCert
-        ));
-    }
-
-    #[test]
-    fn test_validate_missing_pem_priv_key() {
-        let mut cli_config = CliConfig::default();
-        cli_config.pem_pub_key = Some(PathBuf::from("public_key.pem"));
-        cli_config.pem_priv_key = None;
-
-        let result = Config::validate(&cli_config);
-
-        assert!(result.is_err());
-        assert!(matches!(
-            result.unwrap_err(),
-            ConfigParsingError::MissingPemPrivKey
-        ));
     }
 
     #[test]

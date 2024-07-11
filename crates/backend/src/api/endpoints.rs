@@ -185,7 +185,7 @@ async fn dependencies_iterative(
                     debug!("{} already treated", l.path());
                 }
             } else {
-                error!("Dependency fetching error: {}", dep.unwrap_err());
+                error!("Dependency fetching error: {:?}", dep.unwrap_err());
                 counter!("errors").increment(1);
             }
         }

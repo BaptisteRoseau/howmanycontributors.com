@@ -68,7 +68,7 @@ impl GitHubLinkDependencies {
     ///
     ///```rust
     /// use github_scrapper::GitHubLink;
-    /// 
+    ///
     /// async fn example() {
     ///    let link = GitHubLink::try_from("https://github.com/tokio-rs/tokio".to_string()).unwrap();
     ///    let mut dep_iterator = link.dependencies();
@@ -122,13 +122,10 @@ impl GitHubLinkDependencies {
 
         if self.number_of_pages.is_none() {
             if let Some(pagination_component) = current_page.select(&PAGINATION_SELECTOR).next() {
-                self.number_of_pages = Some(
-                    pagination_component
-                        .attr("data-total-pages")
-                        .unwrap()
-                        .parse::<usize>()
-                        .unwrap(),
-                );
+                self.number_of_pages = pagination_component
+                    .attr("data-total-pages")
+                    .and_then(|s| s.parse::<usize>().ok())
+                    .or(Some(1));
             } else {
                 self.number_of_pages = Some(1);
             }

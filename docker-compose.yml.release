@@ -12,7 +12,7 @@ services:
     restart: always
     volumes:
       - "hmc-cache:/data"
-      - "manifests/redis/redis.conf:/usr/local/etc/redis/redis.conf"
+      - "./manifests/redis/redis.conf:/usr/local/etc/redis/redis.conf"
 
   database:
     image: postgres:16.2
@@ -27,9 +27,6 @@ services:
       GRAFANA_USER: grafana
       GRAFANA_PASSWORD: password
       PGDATA: /var/lib/postgresql/data/pgdata
-      # POSTGRES_HOST_AUTH_METHOD: trust # You should specify the mode and IP range in production
-    ports:
-      - "5432:5432"
     restart: on-failure
     volumes:
       - "hmc-postgres:/var/lib/postgresql/data"
@@ -43,9 +40,9 @@ services:
     environment:
       GF_SECURITY_ADMIN_USER: admin
       GF_SECURITY_ADMIN_PASSWORD: admin
+    restart: always
     ports:
       - "3000:3000"
-    restart: always
     volumes:
       - "hmc-grafana:/var/lib/grafana"
 
@@ -54,59 +51,53 @@ services:
     container_name: hmc-prometheus
     networks:
       - hmc
-    ports:
-      - "9090:9090"
     restart: always
     volumes:
       - "hmc-prometheus:/prometheus"
       - ./manifests/prometheus:/etc/prometheus
 
   backend:
-    image: localhost/hmc-backend:latest-debug
+    read_only: true
+    image: localhost/hmc-backend:1.0.0
     build:
       context: .
-      dockerfile: crates/backend/Dockerfile.debug
+      dockerfile: crates/backend/Dockerfile.release
       tags:
-        - "localhost/hmc-backend:latest-debug"
+        - "localhost/hmc-backend:1.0.0"
     container_name: hmc-backend
     environment:
       IP: 0.0.0.0
       PROMETHEUS_IP: 0.0.0.0
       SWAGGER_IP: 0.0.0.0
-      DEBUG: true
       CACHE_CLUSTER_URLS: redis://hmc-redis:6379/
       DATABASE_HOST: hmc-postgres
       DATABASE_PORT: 5432
       DATABASE_NAME: hmc
       DATABASE_USER: backend
       DATABASE_PASSWORD: password
-      RUST_LOG: RUST_LOG=warn,github_scrapper=debug,backend=debug
+      RUST_LOG: RUST_LOG=warn,github_scrapper=info,backend=info
       RUST_BACKTRACE: 1
     networks:
       - hmc
     ports:
       - "8090:24316"
-      - "8091:7070"
-      - "8092:9100"
     restart: always
-    volumes:
-      - ".:/src"
 
   frontend:
-    image: localhost/hmc-frontend:latest-debug
+    read_only: true
+    image: localhost/hmc-frontend:1.0.0
     build:
       context: .
-      dockerfile: crates/frontend/Dockerfile.debug
+      dockerfile: crates/frontend/Dockerfile.release
       tags:
-        - "localhost/hmc-frontend:latest-debug"
+        - "localhost/hmc-frontend:1.0.0"
     container_name: hmc-frontend
     environment:
-      - API_ROOT=http://127.0.0.1:8090/
+      API_ROOT: "http://127.0.0.1:8090/"
     ports:
-      - "8080:8080"
+      - "8080:23669"
     restart: always
-    volumes:
-      - ".:/src"
+    entrypoint: ["/bin/miniserve", "--index", "index.html", "--spa", "--disable-indexing", "--hide-theme-selector", "--hide-version-footer", "-i", "0.0.0.0", "-p", "23669"]
 
 networks:
   hmc:

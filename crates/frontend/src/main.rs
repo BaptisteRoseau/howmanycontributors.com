@@ -10,10 +10,13 @@ mod routes;
 mod services;
 
 use dioxus::prelude::*;
+
+#[cfg(debug_assertions)]
 use tracing::Level;
 
 fn main() {
     init_client_logger();
+    services::panic_on_error();
     launch(App);
 }
 

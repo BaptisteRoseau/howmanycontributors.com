@@ -1,4 +1,4 @@
-FROM rust:1.77 as BUILDER
+FROM rust:1.79 as BUILDER
 
 ARG target=x86_64-unknown-linux-gnu
 
@@ -19,7 +19,7 @@ RUN RUSTFLAGS='-C target-feature=+crt-static' \
     mv target/$target/release/http_health_checker /opt/http_health_checker && \
     chmod 555 /opt/http_health_checker
 
-FROM scratch
+FROM gcr.io/distroless/static-debian12
 
 COPY --from=BUILDER /opt/backend /backend
 COPY --from=BUILDER /opt/http_health_checker /http_health_checker
@@ -34,6 +34,3 @@ HEALTHCHECK \
     --retries=3 \
     CMD [ "/http_health_checker", "http://127.0.0.1:24316/" ]
 ENTRYPOINT [ "/backend", "--port", "24316" ]
-CMD [ "--config", "/etc/backend/config.yml", \
-    "--pem-priv-key", "/etc/backend/key.pem" \
-    "--pem-pub-key", "/etc/backend/cert.pem" ]

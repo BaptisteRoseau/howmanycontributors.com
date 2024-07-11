@@ -5,21 +5,12 @@ use tracing::debug;
 use crate::error::Error;
 use crate::models::ErrorInfo;
 
-// Allow to use .env file in debug mode
-
-#[cfg(debug_assertions)]
 lazy_static! {
     pub(super) static ref API_ROOT: String =
+        // std::env::var("API_ROOT").expect("Missing API_ROOT environment variable");
         std::env::var("API_ROOT").unwrap_or("http://127.0.0.1:8090".into());
+        
 }
-
-// Use actual environment variable in release mode
-#[cfg(not(debug_assertions))]
-const API_ROOT: String = std::env!(
-    "API_ROOT",
-    "API_ROOT environment variable must be explicitly defined during compilation."
-)
-.to_string();
 
 /// build all kinds of http request: post/get/delete etc.
 pub async fn request<B, T>(method: reqwest::Method, path: String, body: B) -> Result<T, Error>
@@ -113,4 +104,11 @@ where
 pub fn limit(count: u32, p: u32) -> String {
     let offset = if p > 0 { p * count } else { 0 };
     format!("limit={}&offset={}", count, offset)
+}
+
+pub fn panic_on_error() {
+    assert!(
+        API_ROOT.starts_with("http"),
+        "API_ROOT must start with 'http'"
+    );
 }

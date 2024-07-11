@@ -1,8 +1,6 @@
-FROM rust:1.77 as BUILDER
+FROM rust:1.79 as BUILDER
 
 ARG target=x86_64-unknown-linux-gnu
-#FIXME: Do not use dotenv at compilation but at runtime instead
-ARG api_root="http://127.0.0.1:8090"
 
 RUN cargo install dioxus-cli && \
     RUSTFLAGS='-C target-feature=+crt-static' cargo install miniserve --root /opt/ --target $target
@@ -18,7 +16,7 @@ RUN RUSTFLAGS='-C target-feature=+crt-static' \
     --target $target \
     --bin http_health_checker
 
-RUN API_ROOT=$api_root RUSTFLAGS='-C target-feature=+crt-static' \
+RUN RUSTFLAGS='-C target-feature=+crt-static' \
     dx build \
     --release \
     --target $target \
@@ -55,4 +53,3 @@ HEALTHCHECK \
 ENTRYPOINT ["/bin/miniserve", "--index", "index.html", "--spa", \
     "--disable-indexing", "--hide-theme-selector", "--hide-version-footer", \
     "-i", "0.0.0.0", "-p", "23669"]
-# CMD ["--tls-key", "TODO", "--tls-cert", "TODO"]

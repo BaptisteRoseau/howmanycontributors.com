@@ -17,7 +17,7 @@ lazy_static = "1"
 log = "0"
 parking_lot = "0"
 regex = { version = "*" }
-reqwest = { version = "0", features = ["json"] }
+reqwest = { version = "0", features = ["json", "rustls-tls"] }
 serde = "1"
 thiserror = "1"
 tracing = "0"

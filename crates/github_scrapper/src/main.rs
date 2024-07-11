@@ -51,7 +51,7 @@ async fn recursive_dependencies(
                 recursive_dependencies(l, dependencies.clone()).await;
             }
         } else {
-            error!("Dependency fetching error: {}", dep.unwrap_err());
+            error!("Dependency fetching error: {:?}", dep.unwrap_err());
         }
     }
 

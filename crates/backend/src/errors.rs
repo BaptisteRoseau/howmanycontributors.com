@@ -5,12 +5,6 @@ pub(crate) enum ConfigParsingError {
     #[error("Error while reading config file")]
     Disconnect(#[from] std::io::Error),
 
-    #[error("Missing PEM public certificate")]
-    MissingPemPubCert,
-
-    #[error("Missing PEM private key")]
-    MissingPemPrivKey,
-
     #[error("{}", .0)]
     Error(String),
 
