@@ -1,12 +1,11 @@
 ---
 # This docker compose file is intended for development purposes and not for
 # production use.
-version: "3"
-
 services:
   cache:
     image: redis:7.2.5
     container_name: hmc-redis
+    user: 10001:1004
     networks:
       - hmc
     restart: always
@@ -17,6 +16,7 @@ services:
   database:
     image: postgres:16.2
     container_name: hmc-postgres
+    user: 10001:1004
     networks:
       - hmc
     environment:
@@ -27,13 +27,13 @@ services:
       GRAFANA_USER: grafana
       GRAFANA_PASSWORD: password
       PGDATA: /var/lib/postgresql/data/pgdata
-    restart: on-failure
+    restart: always
     volumes:
       - "hmc-postgres:/var/lib/postgresql/data"
       - "./database:/docker-entrypoint-initdb.d/"
 
   grafana:
-    image: grafana/grafana:10.4.2
+    image: grafana/grafana:11.1.0
     container_name: hmc-grafana
     networks:
       - hmc
@@ -42,19 +42,19 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: admin
     restart: always
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     volumes:
       - "hmc-grafana:/var/lib/grafana"
 
   prometheus:
-    image: prom/prometheus:v2.51.2
+    image: prom/prometheus:v2.53.1
     container_name: hmc-prometheus
     networks:
       - hmc
     restart: always
     volumes:
       - "hmc-prometheus:/prometheus"
-      - ./manifests/prometheus:/etc/prometheus
+      - ./manifests/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
 
   backend:
     read_only: true
@@ -80,7 +80,7 @@ services:
     networks:
       - hmc
     ports:
-      - "8090:24316"
+      - "127.0.0.1:24316:24316"
     restart: always
 
   frontend:
@@ -93,11 +93,10 @@ services:
         - "localhost/hmc-frontend:1.0.0"
     container_name: hmc-frontend
     environment:
-      API_ROOT: "http://127.0.0.1:8090/"
+      API_ROOT: "https://howmanycontributors.com/api"
     ports:
-      - "8080:23669"
+      - "127.0.0.1:23669:23669"
     restart: always
-    entrypoint: ["/bin/miniserve", "--index", "index.html", "--spa", "--disable-indexing", "--hide-theme-selector", "--hide-version-footer", "-i", "0.0.0.0", "-p", "23669"]
 
 networks:
   hmc:
@@ -107,3 +106,15 @@ volumes:
   hmc-postgres:
   hmc-grafana:
   hmc-prometheus:
+
+# secrets:
+#   POSTGRES_USER: postgres
+#   POSTGRES_PASSWORD: password
+#   BACKEND_USER: backend
+#   BACKEND_PASSWORD: password
+#   GRAFANA_USER: grafana
+#   GRAFANA_PASSWORD: password
+#   GF_SECURITY_ADMIN_USER: admin
+#   GF_SECURITY_ADMIN_PASSWORD: admin
+#   DATABASE_NAME: SAME AS ABOVE
+#   DATABASE_USER: SAME AS ABOVE

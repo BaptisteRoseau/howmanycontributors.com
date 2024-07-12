@@ -1,16 +1,13 @@
-use lazy_static::lazy_static;
 use serde::{de::DeserializeOwned, Serialize};
 use tracing::debug;
 
 use crate::error::Error;
 use crate::models::ErrorInfo;
 
-lazy_static! {
-    pub(super) static ref API_ROOT: String =
-        // std::env::var("API_ROOT").expect("Missing API_ROOT environment variable");
-        std::env::var("API_ROOT").unwrap_or("http://127.0.0.1:8090".into());
-        
-}
+// The reason API_ROOT is hardcoded is because the environment variable used
+// comes from the *client* side, not the *server* side, since we use
+// WebAssembly this code is actually executed by the browser.
+pub const API_ROOT: &str = "https://howmanycontributors.com/api";
 
 /// build all kinds of http request: post/get/delete etc.
 pub async fn request<B, T>(method: reqwest::Method, path: String, body: B) -> Result<T, Error>
@@ -23,7 +20,7 @@ where
         "API_ROOT must start with 'http'"
     );
     let allow_body = method == reqwest::Method::POST || method == reqwest::Method::PUT;
-    let url = format!("{}{}", API_ROOT.as_str(), path);
+    let url = format!("{}{}", API_ROOT, path);
     debug!("{} {}", method, url);
     let mut builder = reqwest::Client::new()
         .request(method, url)
