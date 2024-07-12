@@ -34,22 +34,23 @@ Deploying the MVP:
 - [X] Prettify the frontend just a bit
 - [X] Configure Redis RAM limitations
 - [X] Verify how to perform a 0-downtime update using docker-compose.yml (see command bellow)
-- [ ] Support HTTPS (Use NGINX and certbot)
+- [X] Support HTTPS (Use NGINX and certbot)
 - [ ] Configure environment variables for secrets
 
-- [ ] Pay for a Hostinger or OVH server and a domain name (verify bandwidth is unlimited)
-- [ ] Install node Prometheus exporter
-- [ ] Install Certbot
-- [ ] Let's encrypt
+- [X] Pay for a Hostinger or OVH server and a domain name (verify bandwidth is unlimited)
+- [X] Install node Prometheus exporter
+- [X] Let's encrypt
 - [ ] Close external connection for ports other that 80, 443, 22
 - [ ] Configure Loki Docker Plugin
+- [ ] Configure Grafana access
+- [ ] Docker compose + systemd
 
 When finished:
 
 - [ ] Add a button to get back to the top of the page
 - [ ] Add a "Feedback" button
-- [ ] SSL/TLS reverse proxy
-- [ ] Add reverse-proxy to access the resources
+- [X] SSL/TLS reverse proxy
+- [X] Add reverse-proxy to access the resources
 - [ ] Post on Twitter & LinkedIn
 - [X] Find how to import/export Grafana dashboards
 - [X] Remove dead code

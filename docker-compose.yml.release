@@ -5,7 +5,6 @@ services:
   cache:
     image: redis:7.2.5
     container_name: hmc-redis
-    user: 10001:1004
     networks:
       - hmc
     restart: always
@@ -16,7 +15,6 @@ services:
   database:
     image: postgres:16.2
     container_name: hmc-postgres
-    user: 10001:1004
     networks:
       - hmc
     environment:
@@ -39,7 +37,7 @@ services:
       - hmc
     environment:
       GF_SECURITY_ADMIN_USER: admin
-      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_SECURITY_ADMIN_PASSWORD: password
     restart: always
     ports:
       - "127.0.0.1:3000:3000"
@@ -92,8 +90,6 @@ services:
       tags:
         - "localhost/hmc-frontend:1.0.0"
     container_name: hmc-frontend
-    environment:
-      API_ROOT: "https://howmanycontributors.com/api"
     ports:
       - "127.0.0.1:23669:23669"
     restart: always
@@ -108,13 +104,8 @@ volumes:
   hmc-prometheus:
 
 # secrets:
-#   POSTGRES_USER: postgres
 #   POSTGRES_PASSWORD: password
-#   BACKEND_USER: backend
 #   BACKEND_PASSWORD: password
-#   GRAFANA_USER: grafana
 #   GRAFANA_PASSWORD: password
-#   GF_SECURITY_ADMIN_USER: admin
-#   GF_SECURITY_ADMIN_PASSWORD: admin
-#   DATABASE_NAME: SAME AS ABOVE
-#   DATABASE_USER: SAME AS ABOVE
+#   GF_SECURITY_ADMIN_PASSWORD: password
+#   DATABASE_PASSWORD: SAME AS POSTGRES_PASSWORD

@@ -51,8 +51,8 @@ pub(crate) fn public_routes(app_state: &AppState) -> Router {
 
     Router::new()
         .route("/", get(ping))
-        .route("/dependencies", get(ws_handler_dependencies))
-        .route("/leaderboard", get(leaderboard))
+        .route("/api/dependencies", get(ws_handler_dependencies))
+        .route("/api/leaderboard", get(leaderboard))
         .layer(middleware_service)
         .with_state(app_state.clone())
 }
