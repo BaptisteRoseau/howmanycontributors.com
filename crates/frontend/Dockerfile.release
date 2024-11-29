@@ -1,4 +1,4 @@
-FROM rust:1.79 as BUILDER
+FROM rust:1.82 as BUILDER
 
 ARG target=x86_64-unknown-linux-gnu
 

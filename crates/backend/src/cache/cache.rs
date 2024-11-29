@@ -63,13 +63,13 @@ impl Cache for RedisCache {
         let mut conn = self.pool.get().await?;
         cmd("SET")
             .arg(&[key, value.to_string().as_str()])
-            .query_async::<_, ()>(&mut conn)
+            .query_async(&mut conn)
             .await?;
         if let Some(lifetime) = lifetime {
             cmd("EXPIRE")
                 .arg(&[key])
                 .arg(lifetime.as_secs() as usize)
-                .query_async::<_, ()>(&mut conn)
+                .query_async(&mut conn)
                 .await?;
         }
         Ok(true)

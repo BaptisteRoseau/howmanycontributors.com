@@ -10,7 +10,7 @@ function log() {
 }
 
 function exit_on_missing_commands() {
-    if ! type date mkdir mktemp podman rm tar >/dev/null; then
+    if ! type date mkdir mktemp docker rm tar >/dev/null; then
         log "Aborting" >&2
         exit 1
     fi
@@ -23,10 +23,10 @@ function export_to() {
 
     tempdir=$(mktemp -d)
     mkdir -p "$tempdir/volumes"
-    for volume in $(podman volume ls -q); do
+    for volume in $(docker volume ls -q); do
         if [[ "$volume" =~ $filter ]]; then
             log "Exporting volume $volume..."
-            podman volume export "$volume" -o "$tempdir/volumes/${volume}.tar"
+            docker volume export "$volume" -o "$tempdir/volumes/${volume}.tar"
             tar --remove-files \
                 -czf "$tempdir/volumes/${volume}.tar.gz" \
                 -C "$tempdir/volumes" \
@@ -52,7 +52,7 @@ function import_from() {
         if [[ "$volume" =~ $filter ]]; then
             log "Importing volume $volume..."
             tar xzf "$volume_file" -C "$tempdir"
-            podman volume import "$volume" "$tempdir/$volume.tar"
+            docker volume import "$volume" "$tempdir/$volume.tar"
             rm "$tempdir/$volume.tar"
         fi
     done

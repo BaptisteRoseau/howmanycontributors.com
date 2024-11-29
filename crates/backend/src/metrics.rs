@@ -9,7 +9,7 @@ pub fn init() {
     metrics::describe_counter!(
         "cache_hit",
         metrics::Unit::Count,
-        "Wether or not the cache was hit. Labels:
+        "Whether or not the cache was hit. Labels:
             - status: hit/miss
             - from: dependencies, contributors
         "
