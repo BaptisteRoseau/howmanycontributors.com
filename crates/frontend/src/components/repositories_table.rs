@@ -29,4 +29,4 @@ pub fn RepositoriesTable(repositories: Signal<Vec<(String, usize)>>) -> Element 
             }
         }
     }
-        }
+}

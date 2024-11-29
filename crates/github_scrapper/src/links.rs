@@ -104,7 +104,7 @@ impl GitHubLink {
             .text()
             .collect::<String>()
             .trim()
-            .replace(',', "")
+            .replace([',', '+'], "")
             .parse::<usize>();
         if contributors.is_err() {
             return Err(GitHubError::NoContributorsComponent(self.link.clone()));

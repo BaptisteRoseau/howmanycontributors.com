@@ -7,6 +7,7 @@ use crate::utils::fetch_page;
 use crate::{GitHubError, GitHubLink};
 
 lazy_static! {
+    // "dependendency" is a typo on GitHub's end, its actually written like this in the HTML.
     static ref DEPENDENCY_SELECTOR: Selector =
         Selector::parse(r#"a[data-hovercard-type="dependendency_graph_package"]"#).unwrap();
     static ref PAGINATION_SELECTOR: Selector = Selector::parse(r#"em[class="current"]"#).unwrap();

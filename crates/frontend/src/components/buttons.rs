@@ -55,11 +55,7 @@ pub fn ActionButton(label: &'static str, onclick: EventHandler<MouseEvent>) -> E
 
 #[component]
 pub fn GoBackButton(label: Option<&'static str>) -> Element {
-    let label = if let Some(l) = label {
-        l
-    } else {
-        "Go Back"
-    };
+    let label = label.unwrap_or("Go Back");
     rsx! {
         ActionButton {
             label,

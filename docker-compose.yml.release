@@ -56,12 +56,12 @@ services:
 
   backend:
     read_only: true
-    image: localhost/hmc-backend:1.0.0
+    image: localhost/hmc-backend:1.0.2
     build:
       context: .
       dockerfile: crates/backend/Dockerfile.release
       tags:
-        - "localhost/hmc-backend:1.0.0"
+        - "localhost/hmc-backend:1.0.2"
     container_name: hmc-backend
     environment:
       IP: 0.0.0.0
@@ -83,12 +83,12 @@ services:
 
   frontend:
     read_only: true
-    image: localhost/hmc-frontend:1.0.0
+    image: localhost/hmc-frontend:1.0.2
     build:
       context: .
       dockerfile: crates/frontend/Dockerfile.release
       tags:
-        - "localhost/hmc-frontend:1.0.0"
+        - "localhost/hmc-frontend:1.0.2"
     container_name: hmc-frontend
     ports:
       - "127.0.0.1:23669:23669"
