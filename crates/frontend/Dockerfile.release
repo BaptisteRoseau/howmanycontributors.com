@@ -32,8 +32,8 @@ WORKDIR /build/crates/frontend
 
 RUN apt update && \
     apt install -y npm && \
-    npm install -g tailwindcss && \
-    npx tailwindcss -i ./input.css -o /opt/dist/tailwind.css --minify
+    npm install -g npx tailwindcss @tailwindcss/cli && \
+    npx @tailwindcss/cli -i ./input.css -o /opt/dist/tailwind.css --minify
 
 FROM scratch
 
