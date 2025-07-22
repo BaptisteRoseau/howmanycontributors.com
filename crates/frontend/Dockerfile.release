@@ -2,8 +2,12 @@ FROM rust:1.88 as BUILDER
 
 ARG target=x86_64-unknown-linux-gnu
 
+# Installing code-independent software first for caching
 RUN cargo install dioxus-cli && \
-    RUSTFLAGS='-C target-feature=+crt-static' cargo install miniserve --root /opt/ --target $target
+    RUSTFLAGS='-C target-feature=+crt-static' cargo install miniserve --root /opt/ --target $target && \
+    apt update && \
+    apt install -y curl && \
+    (curl -fsSL https://bun.com/install | bash)
 
 WORKDIR /build
 
@@ -22,18 +26,16 @@ RUN RUSTFLAGS='-C target-feature=+crt-static' \
     --target $target \
     --package frontend
 
-RUN chmod 444 $(find crates/frontend/dist/* -type f) && \
-    chmod 111 $(find crates/frontend/dist/* -type d) && \
-    mv crates/frontend/dist/ /opt/dist && \
+RUN mv target/dx/frontend/release/web/public /opt/dist && \
+    chmod 444 $( find /opt/dist/* -type f) && \
+    chmod 111 $( find /opt/dist/* -type d) && \
     mv target/$target/release/http_health_checker /opt/http_health_checker && \
     chmod 555 /opt/http_health_checker
 
 WORKDIR /build/crates/frontend
 
-RUN apt update && \
-    apt install -y npm && \
-    npm install -g npx tailwindcss @tailwindcss/cli && \
-    npx @tailwindcss/cli -i ./input.css -o /opt/dist/tailwind.css --minify
+RUN /root/.bun/bin/bun install tailwindcss @tailwindcss/cli && \
+    /root/.bun/bin/bunx @tailwindcss/cli -i ./input.css -o /opt/dist/tailwind.css --minify
 
 FROM scratch
 

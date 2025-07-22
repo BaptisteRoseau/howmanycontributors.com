@@ -2,7 +2,7 @@ use super::UsePersistent;
 use dioxus::prelude::*;
 use web_sys::window;
 
-// Do not change this without automatically migrating the password of all clients.
+// Do not change this or it will reset the theme of all clients.
 const THEME_KEY: &str = "hmc.theme";
 const LIGHT: &str = "light";
 const DARK: &str = "dark";

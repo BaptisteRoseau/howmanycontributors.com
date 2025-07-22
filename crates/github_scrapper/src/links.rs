@@ -89,6 +89,7 @@ impl GitHubLink {
         fetch_page(self.link()).await
     }
 
+    #[allow(clippy::result_large_err)]
     fn get_contributors_from_html(&self, html: &Html) -> Result<usize, GitHubError> {
         let a_selector =
             Selector::parse(format!(r#"a[href="/{}/graphs/contributors"]"#, self.path()).as_str())
