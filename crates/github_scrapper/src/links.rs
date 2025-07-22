@@ -4,7 +4,7 @@ use regex::Regex;
 use scraper::{Html, Selector};
 
 use crate::utils::fetch_page;
-use crate::{errors::GitHubError, GitHubLinkDependencies};
+use crate::{GitHubLinkDependencies, errors::GitHubError};
 
 lazy_static! {
     static ref LINK_PATTERN: Regex =
@@ -94,9 +94,17 @@ impl GitHubLink {
             Selector::parse(format!(r#"a[href="/{}/graphs/contributors"]"#, self.path()).as_str())
                 .unwrap();
 
-        let Some(component) = html.select(&a_selector).next() else {
+        // There can be two "contributors" numbers on the web page.
+        // The first should always be there, the second is optional
+        // See https://github.com/DefinitelyTyped/DefinitelyTyped for example
+        let Some(first_component) = html.select(&a_selector).next() else {
             return Err(GitHubError::NoContributorsComponent(self.link.clone()));
         };
+        let mut component = first_component;
+        if let Some(second_component) = html.select(&a_selector).next() {
+            component = second_component;
+        };
+
         let Some(span) = component.select(&SPAN_SELECTOR).next() else {
             return Err(GitHubError::NoContributorsComponent(self.link.clone()));
         };
