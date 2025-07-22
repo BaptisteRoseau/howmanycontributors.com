@@ -6,13 +6,12 @@ use crate::models::{ContributorsChunk, Link};
 use axum::extract::ws::CloseFrame;
 use axum::extract::{ConnectInfo, State};
 use axum::{
-    extract::ws::{Message, WebSocket, WebSocketUpgrade},
+    extract::ws::{Message, Utf8Bytes, WebSocket, WebSocketUpgrade},
     response::IntoResponse,
 };
 use github_scrapper::{GitHubError, GitHubLink, GitHubLinkDependencies};
 use metrics::counter;
-use rand::{thread_rng, Rng};
-use std::borrow::Cow;
+use rand::Rng;
 use std::collections::HashSet;
 use std::net::SocketAddr;
 use std::sync::Arc;
@@ -65,7 +64,7 @@ pub(crate) async fn dependencies(
     if socket
         .lock()
         .await
-        .send(Message::Ping(vec![1, 2, 3]))
+        .send(Message::Ping(vec![1, 2, 3].into()))
         .await
         .is_ok()
     {
@@ -81,7 +80,7 @@ pub(crate) async fn dependencies(
             .await
             .send(Message::Close(Some(CloseFrame {
                 code: axum::extract::ws::close_code::INVALID,
-                reason: Cow::from("INVALID_LINK"),
+                reason: Utf8Bytes::from("INVALID_LINK"),
             })))
             .await;
         warn!("Invalid link: {}", link.link);
@@ -94,7 +93,7 @@ pub(crate) async fn dependencies(
                 .await
                 .send(Message::Close(Some(CloseFrame {
                     code: axum::extract::ws::close_code::INVALID,
-                    reason: Cow::from("NOT_FOUND"),
+                    reason: Utf8Bytes::from("NOT_FOUND"),
                 })))
                 .await;
             warn!("Repo does not exist: {}", link);
@@ -140,7 +139,7 @@ async fn dependencies_iterative(
             if socket
                 .lock()
                 .await
-                .send(Message::Text(chunk))
+                .send(Message::Text(chunk.into()))
                 .await
                 .is_err()
             {
@@ -151,7 +150,8 @@ async fn dependencies_iterative(
 
         let mut dep_iterator: GitHubLinkDependencies = get_from_database(&link, state.clone())
             .await
-            .and_then(|repo_info| dependencies_from_repository_info(&repo_info)).map(GitHubLinkDependencies::from_precomputed)
+            .and_then(|repo_info| dependencies_from_repository_info(&repo_info))
+            .map(GitHubLinkDependencies::from_precomputed)
             .or(Some(link.dependencies()))
             .expect("You fucked up.");
 
@@ -174,7 +174,7 @@ async fn dependencies_iterative(
                     if socket
                         .lock()
                         .await
-                        .send(Message::Text(chunk))
+                        .send(Message::Text(chunk.into()))
                         .await
                         .is_err()
                     {
@@ -239,9 +239,9 @@ async fn set_to_cache(
     let mut guard = state.cache.write().await;
     let lifetime: Option<Duration>;
     {
-        let mut rng = thread_rng();
+        let mut rng = rand::rng();
         lifetime = Some(Duration::from_secs(
-            rng.gen_range(state.config.cache.ttl_sec_min..state.config.cache.ttl_sec_max) as u64,
+            rng.random_range(state.config.cache.ttl_sec_min..state.config.cache.ttl_sec_max) as u64,
         ));
     }
     match guard
@@ -291,7 +291,7 @@ fn dependencies_from_repository_info(info: &RepositoryInfo) -> Option<Vec<GitHub
         return Some(
             dependencies
                 .iter()
-                .map(|path| GitHubLink::try_from(format!("https://github.com/{}", path)).unwrap())
+                .map(|path| GitHubLink::try_from(format!("https://github.com/{path}")).unwrap())
                 .collect(),
         );
     }

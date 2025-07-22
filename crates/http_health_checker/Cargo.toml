@@ -2,7 +2,7 @@
 [package]
 name = "http_health_checker"
 version = "1.0.0"
-edition = "2021"
+edition = "2024"
 authors = ["Baptiste Roseau"]
 
 [dependencies]

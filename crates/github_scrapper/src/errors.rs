@@ -1,4 +1,4 @@
-/// GitHub Scrapping Errorr
+/// GitHub Scrapping Error
 #[derive(Debug, thiserror::Error)]
 pub enum GitHubError {
     /// The provided link is an invalid GitHub link
@@ -7,7 +7,7 @@ pub enum GitHubError {
     /// The provided repo does not exists
     #[error("Repo Not Found: {0}")]
     NotFound(String),
-    /// An error occured during the request processing
+    /// An error occurred during the request processing
     #[error("Request Error")]
     Request(#[from] reqwest::Error),
     /// The request response was not successful

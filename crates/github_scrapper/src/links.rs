@@ -117,7 +117,6 @@ impl GitHubLink {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     #[test]
     fn test_valid_link() {
         let link = GitHubLink::try_from("https://github.com/OWNER/REPO".to_string()).unwrap();
@@ -152,6 +151,6 @@ mod tests {
     #[test]
     fn test_format() {
         let link = GitHubLink::try_from("https://github.com/OWNER/REPO".to_string()).unwrap();
-        assert_eq!(format!("{}", link), "OWNER/REPO");
+        assert_eq!(format!("{link}"), "OWNER/REPO");
     }
 }

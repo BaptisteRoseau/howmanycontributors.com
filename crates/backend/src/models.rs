@@ -1,3 +1,5 @@
+use std::fmt;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -15,8 +17,10 @@ impl ContributorsChunk {
     pub fn new(path: String, contributors: usize) -> Self {
         Self { path, contributors }
     }
+}
 
-    pub fn to_string(&self) -> String {
-        format!("{}:{}", self.path, self.contributors)
+impl fmt::Display for ContributorsChunk {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}:{}", self.path, self.contributors)
     }
 }

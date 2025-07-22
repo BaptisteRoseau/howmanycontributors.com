@@ -12,7 +12,7 @@ pub fn get_dependencies<T>(link: &str, mut callback: T) -> Result<ServiceWebsock
 where
     T: FnMut(ContributorsChunk) + 'static,
 {
-    let mut ws = ServiceWebsocket::new(format!("/dependencies?link={}", link).as_str())?;
+    let mut ws = ServiceWebsocket::new(format!("/dependencies?link={link}").as_str())?;
     ws.set_onmessage(move |e: MessageEvent| {
         if let Ok(message) = e.data().dyn_into::<js_sys::JsString>() {
             debug!("Received Dependency Chunk: {}", message);

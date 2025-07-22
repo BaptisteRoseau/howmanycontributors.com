@@ -2,7 +2,7 @@
 set -e
 
 # TODO:
-# - CLI commands and arguments "$0 import/exort" "--filter FILTER --verbose --quiet"
+# - CLI commands and arguments "$0 import/export" "--filter FILTER --verbose --quiet"
 
 
 function log() {

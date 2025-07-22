@@ -32,8 +32,6 @@ const DEFAULT_LEADERBOARD_SIZE: usize = 500;
 FULL CONFIG FROM USER
 ====================================================================================== */
 
-///
-
 /// hmc backend server configuration.
 ///
 /// This struct serves as a parser for the configuration file and command line arguments.
@@ -325,6 +323,10 @@ mod test {
     }
 
     #[test]
+    #[allow(
+        clippy::field_reassign_with_default,
+        reason = "Allow modifying attributes for test case"
+    )]
     fn test_validate_ignore_prometheus_config() {
         let mut cli_config = CliConfig::default();
         cli_config.no_prometheus = true;

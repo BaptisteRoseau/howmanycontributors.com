@@ -1,4 +1,5 @@
 *.lock
+*.tar.gz
 .$*.bkp
 .git/
 .vscode/

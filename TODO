@@ -8,7 +8,7 @@ Backend, for a given URL
 - [X] Search for "Contributors" and optionally "Used by" in the HTML
 - [X] Cache results in a key/value Redis for 3 days + rand(1day) with: [OWNER/REPO, contributors, used_by]
 - [X] Search for dependencies at $URL/network/dependencies
-- [X] Repeat for each dependencies
+- [X] Repeat for each dependency
 - [X] Return the total of contributors and details of the dependencies
 - [X] Add a rate limiter per IP
 
@@ -58,7 +58,7 @@ When finished:
 - [ ] Add documentation
 - [ ] Maybe familiarize yourself with Kubernetes
 - [ ] Screaming Frog
-- [ ] Google tag manager
+- [ ] Google Tag Manager
 
 To test via curl:
 

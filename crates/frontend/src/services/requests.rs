@@ -20,7 +20,7 @@ where
         "API_ROOT must start with 'http'"
     );
     let allow_body = method == reqwest::Method::POST || method == reqwest::Method::PUT;
-    let url = format!("{}{}", API_ROOT, path);
+    let url = format!("{API_ROOT}{path}");
     debug!("{} {}", method, url);
     let mut builder = reqwest::Client::new()
         .request(method, url)
@@ -33,7 +33,7 @@ where
     let response = builder.send().await;
 
     if let Ok(data) = response {
-        if data.status().is_success() {
+        if data.status().is_client_error() {
             let data: Result<T, _> = data.json::<T>().await;
             if let Ok(data) = data {
                 debug!("Response: {:?}", data);
@@ -100,7 +100,7 @@ where
 /// Set limit for pagination
 pub fn limit(count: u32, p: u32) -> String {
     let offset = if p > 0 { p * count } else { 0 };
-    format!("limit={}&offset={}", count, offset)
+    format!("limit={count}&offset={offset}")
 }
 
 pub fn panic_on_error() {

@@ -1,3 +1,4 @@
+#![allow(clippy::module_inception)]
 mod api;
 mod config;
 mod cache;
@@ -12,7 +13,7 @@ use std::process::exit;
 async fn main() -> Result<(), anyhow::Error> {
     let config = config::Config::parse()?;
     if let Err(error) = program::run(&config).await {
-        eprintln!("Fatal Error: {}", error);
+        eprintln!("Fatal Error: {error}");
         exit(1);
     }
     Ok(())

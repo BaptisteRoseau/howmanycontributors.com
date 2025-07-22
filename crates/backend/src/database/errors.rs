@@ -76,7 +76,7 @@ impl From<tokio_postgres::Error> for DatabaseError {
                 _ => DatabaseError::PostgresError(err),
             };
         }
-        if format!("{:?}", err) == "Error { kind: RowCount, cause: None }" {
+        if format!("{err:?}") == "Error { kind: RowCount, cause: None }" {
             return DatabaseError::NotFound("".to_string());
         }
         DatabaseError::PostgresError(err)

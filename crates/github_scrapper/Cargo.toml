@@ -1,20 +1,20 @@
 [package]
 name = "github_scrapper"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-async-recursion = "1"
-lazy_static = "1"
-metrics = "0"
-regex = "1"
-reqwest = { version = "0", features = ["json"] }
-scraper = "0"
-serde = { version = "1", features = ["derive"] }
-thiserror = "*"
-tokio = "1"
-tokio-stream = "0"
-tracing = "0"
-tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+async-recursion = "1.1.1"
+lazy_static = "1.5.0"
+metrics = "0.24.2"
+regex = "1.11.1"
+reqwest = { version = "0.12.22", features = ["json"] }
+scraper = "0.23.1"
+serde = { version = "1.0.219", features = ["derive"] }
+thiserror = "2.0.12"
+tokio = "1.46.1"
+tokio-stream = "0.1.17"
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }

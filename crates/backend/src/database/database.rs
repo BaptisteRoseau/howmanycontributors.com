@@ -12,7 +12,7 @@ use tracing::{debug, info};
 
 // TODO: Require SSL when communicating across the internet
 
-#[axum::async_trait]
+// #[axum::async_trait]
 pub trait Database {
     fn init(
         &mut self,
