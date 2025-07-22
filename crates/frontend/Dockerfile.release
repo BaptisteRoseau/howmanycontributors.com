@@ -20,7 +20,7 @@ RUN RUSTFLAGS='-C target-feature=+crt-static' \
     dx build \
     --release \
     --target $target \
-    --bin frontend
+    --package frontend
 
 RUN chmod 444 $(find crates/frontend/dist/* -type f) && \
     chmod 111 $(find crates/frontend/dist/* -type d) && \
