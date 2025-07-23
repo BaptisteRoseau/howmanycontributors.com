@@ -1,6 +1,5 @@
 use super::errors::CacheError;
 use crate::config::Config;
-// use deadpool_redis::cluster::{Config as RedisConfig, Pool, Runtime};
 use deadpool_redis::redis::cmd;
 use deadpool_redis::{Config as RedisConfig, Pool, Runtime};
 use log::info;

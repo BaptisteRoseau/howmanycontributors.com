@@ -15,11 +15,12 @@ pub fn Leaderboard() -> Element {
         spawn(async move {
             match get_leaderboard().await {
                 Ok(mut leaderboard) => {
-                    repositories.write().clear();
+                    let mut guard = repositories.write();
+                    guard.clear();
                     while let Some(item) = leaderboard.pop() {
-                        repositories.write().push((item.0, item.1 as usize));
-                        repositories.write().sort_by(|a, b| b.1.cmp(&a.1));
+                        guard.push((item.0, item.1));
                     }
+                    guard.sort_by(|a, b| b.1.cmp(&a.1));
                 }
                 Err(e) => {
                     error!("Error Fetching dependencies: {:#?}", e);

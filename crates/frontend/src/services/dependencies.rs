@@ -3,9 +3,9 @@ use crate::error::Error;
 use crate::models::ContributorsChunk;
 
 use tracing::debug;
-use web_sys::wasm_bindgen::prelude::*;
-use web_sys::js_sys;
 use web_sys::MessageEvent;
+use web_sys::js_sys;
+use web_sys::wasm_bindgen::prelude::*;
 
 /// Get decks filtered by author
 pub fn get_dependencies<T>(link: &str, mut callback: T) -> Result<ServiceWebsocket, Error>
@@ -16,11 +16,12 @@ where
     ws.set_onmessage(move |e: MessageEvent| {
         if let Ok(message) = e.data().dyn_into::<js_sys::JsString>() {
             debug!("Received Dependency Chunk: {}", message);
-            if let Ok(chunk) = ContributorsChunk::try_from(message.as_string().unwrap().as_str()) {
-                callback(chunk);
+            if let Some(msg) = message.as_string() {
+                if let Ok(chunk) = ContributorsChunk::try_from(msg.as_str()) {
+                    callback(chunk);
+                }
             }
         }
-        
     });
     Ok(ws)
 }

@@ -4,15 +4,15 @@ use std::ops::{Add, Deref, DerefMut};
 
 use crate::components::RepositoriesTable;
 use crate::models::ContributorsChunk;
-use crate::services::{get_dependencies, ServiceWebsocket};
+use crate::services::{ServiceWebsocket, get_dependencies};
 use crate::{assets::Logo, error::Error};
 
 use dioxus::prelude::*;
+use gloo::timers::future::sleep;
 use lazy_static::lazy_static;
 use regex::Regex;
 use std::time::Duration;
 use tracing::{debug, error, info};
-use gloo::timers::future::sleep;
 
 lazy_static! {
     static ref LINK_PATTERN: Regex =
@@ -111,7 +111,7 @@ pub fn MainSearch(url: Option<String>) -> Element {
                 }
                 input {
                     "type": "search",
-                    class: "p-2 border border-slate-500 rounded-lg w-full text-black",
+                    class: " p-2 border border-slate-500 rounded-lg w-full bg-white text-black",
                     id: "main_search",
                     placeholder: "https://github.com/owner/repository",
                     value: "{url}",

@@ -47,6 +47,7 @@ async fn recursive_dependencies(
     while let Some(dep) = dep_iterator.next().await {
         if let Ok(l) = dep {
             if !dependencies.read().await.contains_key(&l.path()) {
+                // Avoid flooding GitHub with requests
                 sleep(Duration::from_secs(1)).await;
                 recursive_dependencies(l, dependencies.clone()).await;
             }

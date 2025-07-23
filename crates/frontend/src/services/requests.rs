@@ -33,7 +33,7 @@ where
     let response = builder.send().await;
 
     if let Ok(data) = response {
-        if data.status().is_client_error() {
+        if data.status().is_success() {
             let data: Result<T, _> = data.json::<T>().await;
             if let Ok(data) = data {
                 debug!("Response: {:?}", data);
