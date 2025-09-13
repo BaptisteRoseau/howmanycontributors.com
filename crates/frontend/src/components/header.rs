@@ -1,6 +1,6 @@
-use crate::assets::{Logo, Menu};
+use crate::assets::{Github, Logo, Menu};
 use crate::components::ThemeSwitcher;
-use crate::hooks::{use_theme, ThemeHandler};
+use crate::hooks::{ThemeHandler, use_theme};
 use crate::routes::Routes;
 
 use dioxus::prelude::*;
@@ -36,8 +36,14 @@ pub fn Header() -> Element {
                         }
                     }
                 }
-                div {class: "border-l border-slate-200 dark:border-gray-500 h-6"}
+                div { class: "border-l border-slate-200 dark:border-gray-500 h-6" }
                 ThemeSwitcher { theme }
+                Link {
+                    to: "https://github.com/BaptisteRoseau/howmanycontributors.com",
+                    class: "w-[32px] h-[32px] transition-color text-black hover:text-gray-900/75 dark:text-white dark:hover:text-gray-100/75",
+                    new_tab: true,
+                    Github {}
+                }
             }
         }
     }

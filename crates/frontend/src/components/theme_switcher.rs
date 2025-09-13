@@ -23,7 +23,7 @@ pub fn ThemeSwitcher(theme: Signal<ThemeHandler>) -> Element {
     let _false = use_signal(|| false);
 
     rsx! {
-        div { class: "border-none relative flex items-center ring-1 ring-slate-500/10 rounded-lg shadow-sm p-2 text-slate-600 font-semibold dark:highlight-white/5 dark:text-slate-200",
+        div { class: "border-none relative flex items-center ring-1 ring-slate-500/10 rounded-lg p-2 text-slate-600 font-semibold dark:highlight-white/5 dark:text-slate-200",
             div { class: "border-none w-6 h-6 mr-2 dark:hidden",
                 SunIcon { selected: _false }
             }
