@@ -86,8 +86,8 @@ pub(crate) async fn dependencies(
         warn!("Invalid link: {}", link.link);
         return;
     };
-    if let Err(e) = link.fetch_contributors().await {
-        if matches!(e, GitHubError::NotFound(_)) {
+    if let Err(e) = link.fetch_contributors().await
+        && matches!(e, GitHubError::NotFound(_)) {
             let _ = socket
                 .lock()
                 .await
@@ -99,7 +99,6 @@ pub(crate) async fn dependencies(
             warn!("Repo does not exist: {}", link);
             return;
         }
-    }
 
     info!("Client {who} connected");
 

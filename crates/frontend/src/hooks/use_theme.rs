@@ -65,8 +65,7 @@ impl ThemeHandler {
             .and_then(|document| document.document_element())
             .map(|document_element| document_element.class_list());
 
-        if html_classes.is_some() {
-            let html_classes = html_classes.unwrap();
+        if let Some(html_classes) = html_classes {
             if current == Theme::Dark {
                 let _ = html_classes.add_1(DARK);
             } else {
@@ -130,7 +129,7 @@ pub fn use_theme() -> Signal<ThemeHandler> {
     })
 }
 
-pub fn init_theme(){
+pub fn init_theme() {
     use_theme().read().set_window_theme();
 }
 
