@@ -1,15 +1,16 @@
 use crate::{api::endpoints::ping, api::state::AppState};
 
-use axum::{routing::get, Router};
+use axum::{Router, routing::get};
 use axum_prometheus::metrics_exporter_prometheus::PrometheusHandle;
 use std::time::Duration;
 use std::{future::ready, sync::Arc};
 use tower::ServiceBuilder;
-use tower_governor::governor::GovernorConfigBuilder;
 use tower_governor::GovernorLayer;
+use tower_governor::governor::GovernorConfigBuilder;
 use tower_http::{
-    compression::CompressionLayer, cors::CorsLayer, decompression::RequestDecompressionLayer,
-    normalize_path::NormalizePathLayer, timeout::TimeoutLayer, trace::TraceLayer, CompressionLevel,
+    CompressionLevel, compression::CompressionLayer, cors::CorsLayer,
+    decompression::RequestDecompressionLayer, normalize_path::NormalizePathLayer,
+    timeout::TimeoutLayer, trace::TraceLayer,
 };
 use tracing::info;
 
@@ -17,7 +18,7 @@ use super::endpoints::{leaderboard, ws_handler_dependencies};
 
 const TIMEOUT_SEC: u64 = 20;
 
-/// Public routes that qre exposed to the world
+/// Public routes that are exposed to the world
 pub(crate) fn public_routes(app_state: &AppState) -> Router {
     let governor_conf = Arc::new(
         GovernorConfigBuilder::default()
@@ -26,10 +27,12 @@ pub(crate) fn public_routes(app_state: &AppState) -> Router {
             .unwrap(),
     );
     let governor_limiter = governor_conf.limiter().clone();
-    std::thread::spawn(move || loop {
-        std::thread::sleep(Duration::from_secs(600));
-        info!("Rate limiting storage size: {}", governor_limiter.len());
-        governor_limiter.retain_recent();
+    std::thread::spawn(move || {
+        loop {
+            std::thread::sleep(Duration::from_secs(600));
+            info!("Rate limiting storage size: {}", governor_limiter.len());
+            governor_limiter.retain_recent();
+        }
     });
 
     let middleware_service = ServiceBuilder::new()
@@ -44,9 +47,7 @@ pub(crate) fn public_routes(app_state: &AppState) -> Router {
         .layer(CompressionLayer::new().quality(CompressionLevel::Best))
         .layer(RequestDecompressionLayer::new())
         // Rate Limiting per IP
-        .layer(GovernorLayer {
-            config: governor_conf,
-        })
+        .layer(GovernorLayer::new(governor_conf))
         .layer(TimeoutLayer::new(Duration::from_secs(TIMEOUT_SEC)));
 
     Router::new()
