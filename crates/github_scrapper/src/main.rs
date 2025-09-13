@@ -3,7 +3,7 @@ use github_scrapper::GitHubLink;
 use std::sync::Arc;
 use std::{collections::HashMap, process::exit};
 use tokio::sync::RwLock;
-use tokio::time::{sleep, Duration};
+use tokio::time::{Duration, sleep};
 use tracing::{error, info};
 
 #[tokio::main]
@@ -16,6 +16,7 @@ async fn main() {
     }
 
     let link = GitHubLink::try_from(args[1].clone()).unwrap();
+    info!("Contributors: {:?}", &link.fetch_contributors().await);
     let dependencies = Arc::new(RwLock::new(HashMap::new()));
     let dependencies = recursive_dependencies(link, dependencies).await;
 
