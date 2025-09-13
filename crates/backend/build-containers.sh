@@ -7,13 +7,13 @@ ENGINE=docker
 "$ENGINE" build \
     --file "$SCRIPT_DIR/Dockerfile.release" \
     --build-arg target="$TARGET" \
-    -t backend:"$VERSION" \
-    -t backend:latest \
+    -t hmc-backend:"$VERSION" \
+    -t hmc-backend:latest \
     "$(git rev-parse --show-toplevel)"
 
 # "$ENGINE" build \
 #     --file "$SCRIPT_DIR/Dockerfile.debug" \
 #     --build-arg target="$TARGET" \
-#     -t backend:"$VERSION-debug" \
-#     -t backend:latest-debug \
+#     -t hmc-backend:"$VERSION-debug" \
+#     -t hmc-backend:latest-debug \
 #     "$(git rev-parse --show-toplevel)"
