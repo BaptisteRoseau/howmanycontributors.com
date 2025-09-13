@@ -17,7 +17,7 @@ use super::errors::ApiError;
 // Do NOT use generics or dyn for AppState yet, find another way.
 
 /// Application state containing all the components of the application
-/// such as the database, the configuration or tje authenticator.
+/// such as the database, the configuration or the authenticator.
 ///
 /// All the mutable attributes should contain an Arc<RwLock<_>> to ensure
 /// synchronization across the application.
