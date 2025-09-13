@@ -2,6 +2,7 @@ use lazy_static::lazy_static;
 use metrics::counter;
 use regex::Regex;
 use scraper::{Html, Selector};
+use tracing::info;
 
 use crate::utils::fetch_page;
 use crate::{GitHubLinkDependencies, errors::GitHubError};
@@ -98,28 +99,44 @@ impl GitHubLink {
         // There can be two "contributors" numbers on the web page.
         // The first should always be there, the second is optional
         // See https://github.com/DefinitelyTyped/DefinitelyTyped for example
-        let Some(first_component) = html.select(&a_selector).next() else {
+        let mut a_selector_iter = html.select(&a_selector);
+        let Some(first_component) = a_selector_iter.next() else {
             return Err(GitHubError::NoContributorsComponent(self.link.clone()));
         };
-        let mut component = first_component;
-        if let Some(second_component) = html.select(&a_selector).next() {
-            component = second_component;
+        let contributors = match a_selector_iter.next() {
+            Some(second_component) => {
+                info!("Got second component");
+                let content = second_component.text().collect::<String>();
+                let content: Vec<&str> = content.trim().split(" ").collect();
+                let contributors = content
+                    .get(1)
+                    .unwrap_or(&"0")
+                    .replace([',', '+'], "")
+                    .parse::<usize>();
+                if contributors.is_err() {
+                    return Err(GitHubError::NoContributorsComponent(self.link.clone()));
+                }
+
+                contributors.unwrap()
+            }
+            None => {
+                let Some(span) = first_component.select(&SPAN_SELECTOR).next() else {
+                    return Err(GitHubError::NoContributorsComponent(self.link.clone()));
+                };
+                let contributors = span
+                    .text()
+                    .collect::<String>()
+                    .trim()
+                    .replace([',', '+'], "")
+                    .parse::<usize>();
+                if contributors.is_err() {
+                    return Err(GitHubError::NoContributorsComponent(self.link.clone()));
+                }
+                contributors.unwrap()
+            }
         };
 
-        let Some(span) = component.select(&SPAN_SELECTOR).next() else {
-            return Err(GitHubError::NoContributorsComponent(self.link.clone()));
-        };
-        let contributors = span
-            .text()
-            .collect::<String>()
-            .trim()
-            .replace([',', '+'], "")
-            .parse::<usize>();
-        if contributors.is_err() {
-            return Err(GitHubError::NoContributorsComponent(self.link.clone()));
-        }
-
-        Ok(contributors.unwrap())
+        Ok(contributors)
     }
 }
 
