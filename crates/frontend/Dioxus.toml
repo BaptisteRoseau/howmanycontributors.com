@@ -16,7 +16,7 @@ asset_dir = "assets"
 [web.app]
 
 # HTML title tag content
-title = "HowManyContributors"
+title = "How Many Contributors"
 
 [web.watcher]
 
@@ -30,7 +30,6 @@ watch_path = ["src", "assets", "input.css", "tailwind.config.js", "dist/tailwind
 [web.resource]
 
 # CSS style file
-
 style = ["/tailwind.css"]
 
 # Javascript code file
