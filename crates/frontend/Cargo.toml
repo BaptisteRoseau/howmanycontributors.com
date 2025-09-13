@@ -7,21 +7,21 @@ edition = "2024"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "1.0.98"
-chrono = { version = "0.4.41", features = ["serde"] }
+anyhow = "1.0.99"
+chrono = { version = "0.4.42", features = ["serde"] }
 dioxus = { version = "0.6.3", features = ["web", "router"] }
 dioxus-logger = "0.6.2"
 dotenvy_macro = { version = "0.15.7" }
 gloo = { version = "0.11.0", features = ["futures"] }
 lazy_static = "1.5.0"
-log = "0.4.27"
+log = "0.4.28"
 parking_lot = "0.12.4"
-regex = { version = "1.11.1" }
-reqwest = { version = "0.12.22", features = ["json", "rustls-tls"] }
+regex = { version = "1.11.2" }
+reqwest = { version = "0.12.23", features = ["json", "rustls-tls"] }
 serde = "1.0.219"
-thiserror = "2.0.12"
+thiserror = "2.0.16"
 tracing = "0.1.41"
-web-sys = { version = "0.3.77", features = [
+web-sys = { version = "0.3.78", features = [
     "Window",
     "DomTokenList",
     "Element",
@@ -30,4 +30,4 @@ web-sys = { version = "0.3.77", features = [
 ] }
 
 [dev-dependencies]
-wasm-bindgen-test = { version = "0.3.50" }
+wasm-bindgen-test = { version = "0.3.51" }
