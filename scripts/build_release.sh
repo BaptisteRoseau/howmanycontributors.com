@@ -3,6 +3,7 @@ GIT_ROOT=$(git rev-parse --show-toplevel)
 ENGINE=docker
 
 VERSION=$(grep 'version' crates/frontend/Cargo.toml | head -n 1 | cut -d ' ' -f 3 | sed -e 's/^.//' -e 's/.$//')
+echo "Building hmc-frontend v$VERSION"
 "$ENGINE" build \
     --file "crates/frontend/Dockerfile.release" \
     --build-arg target="$TARGET" \
@@ -13,6 +14,7 @@ docker save hmc-frontend:"$VERSION" | gzip > "$GIT_ROOT/hmc-frontend-$VERSION.ta
 echo "Built hmc-frontend-$VERSION.tar.gz"
 
 VERSION=$(grep 'version' crates/backend/Cargo.toml | head -n 1 | cut -d ' ' -f 3 | sed -e 's/^.//' -e 's/.$//')
+echo "Building hmc-backend v$VERSION"
 "$ENGINE" build \
     --file "crates/backend/Dockerfile.release" \
     --build-arg target="$TARGET" \
