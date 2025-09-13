@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 GIT_ROOT=$(git rev-parse --show-toplevel)
+TARGET=${TARGET:=x86_64-unknown-linux-gnu}
 ENGINE=docker
 
 VERSION=$(grep 'version' crates/frontend/Cargo.toml | head -n 1 | cut -d ' ' -f 3 | sed -e 's/^.//' -e 's/.$//')
