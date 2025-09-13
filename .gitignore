@@ -11,3 +11,5 @@ dist/
 crates/frontend/dist
 GrafanaDashboard.json
 public
+node_modules
+package.json
