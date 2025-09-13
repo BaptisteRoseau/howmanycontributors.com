@@ -1,10 +1,6 @@
 #!/usr/bin/env bash
 set -e
 
-# TODO:
-# - CLI commands and arguments "$0 import/export" "--filter FILTER --verbose --quiet"
-
-
 function log() {
     echo "[$(date +"%Y-%m-%dT%H:%M:%S%z")]" "$@"
 }
