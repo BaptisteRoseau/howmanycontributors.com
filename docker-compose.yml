@@ -1,8 +1,5 @@
----
 # This docker compose file is intended for development purposes and not for
 # production use.
-version: "3"
-
 services:
   cache:
     image: redis:7.2.5
@@ -93,7 +90,7 @@ services:
       - "8092:9100"
     restart: always
     volumes:
-      - ".:/src"
+      - ".:/mount/repository"
 
   frontend:
     image: localhost/hmc-frontend:latest-debug
@@ -109,7 +106,7 @@ services:
       - "8080:8080"
     restart: always
     volumes:
-      - ".:/src"
+      - ".:/mount/repository"
 
 networks:
   hmc:

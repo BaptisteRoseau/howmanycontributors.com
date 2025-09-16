@@ -101,3 +101,7 @@ You can disable this behavior by using:
 ```cmd
 chmod -x .git/hooks/pre-commit
 ```
+
+### Release
+
+To build the release docker images, run [scripts/build_release.sh](scripts/build_release.sh).

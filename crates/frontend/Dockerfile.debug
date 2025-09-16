@@ -1,27 +1,22 @@
-FROM rust:1.88
+FROM debian:13-slim
 
-ARG target=x86_64-unknown-linux-gnu
-
+# Install dependencies
 RUN apt update && \
-    apt install -y curl && \
-    (curl -fsSL https://bun.com/install | bash) && \
-    /root/.bun/bin/bun install tailwindcss @tailwindcss/cli && \
+    apt install -y curl
+
+# Install Rust
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+
+# Install Bun
+RUN (curl -fsSL https://bun.com/install | bash)
+
+# Install Tailwind & Dioxus
+RUN /root/.bun/bin/bun install tailwindcss @tailwindcss/cli && \
     cargo install dioxus-cli
 
+VOLUME [ "/mount/repository" ]
+WORKDIR /mount/repository/crates/frontend
 ENV CARGO_TARGET_DIR=/build
-
-WORKDIR /src
-
-# Just to allow this container to run independently
-# For development purposes, it is better to mount the source code on /src
-COPY crates/ ./crates/
-COPY Cargo.toml ./Cargo.toml
-COPY .env ./.env
-
-RUN dx build --package frontend
-
 EXPOSE 8080
-
-WORKDIR /src/crates/frontend
 
 ENTRYPOINT ["./entrypoint.debug.sh"]
