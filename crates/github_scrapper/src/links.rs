@@ -2,7 +2,7 @@ use lazy_static::lazy_static;
 use metrics::counter;
 use regex::Regex;
 use scraper::{Html, Selector};
-use tracing::info;
+use tracing::debug;
 
 use crate::utils::fetch_page;
 use crate::{GitHubLinkDependencies, errors::GitHubError};
@@ -105,7 +105,7 @@ impl GitHubLink {
         };
         let contributors = match a_selector_iter.next() {
             Some(second_component) => {
-                info!("Got second component");
+                debug!("Got second component");
                 let content = second_component.text().collect::<String>();
                 let content: Vec<&str> = content.trim().split(" ").collect();
                 let contributors = content

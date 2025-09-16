@@ -4,11 +4,13 @@ use std::sync::Arc;
 use std::{collections::HashMap, process::exit};
 use tokio::sync::RwLock;
 use tokio::time::{Duration, sleep};
-use tracing::{error, info};
+use tracing::{Level, error, info};
 
 #[tokio::main]
 async fn main() {
-    tracing_subscriber::fmt::init();
+    tracing_subscriber::fmt::fmt()
+        .with_max_level(Level::INFO)
+        .init();
     let args: Vec<_> = std::env::args().collect();
     if args.len() != 2 {
         println!("Usage: {} <url>", args[0]);
