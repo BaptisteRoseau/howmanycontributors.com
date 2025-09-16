@@ -2,9 +2,9 @@
 
 This is the source code of the [howmanycontributors.com](howmanycontributors.com) website.
 
-The purpose of this website is to recursively find the approximate number of contributors of a project, its dependencies, their dependencies etc..
+The purpose of this website is to recursively find the approximate number of contributors of a project, its dependencies, their dependencies etc...
 
-This was a small project to learn Dioxus for the frontend and Axum for the backend, as well as websocket connections for real-time frontend update.
+This was a small project to learn Dioxus for the frontend and Axum for the backend, as well as web socket connections for real-time frontend update.
 
 ## Repository organization
 
