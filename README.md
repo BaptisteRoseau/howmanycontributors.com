@@ -77,7 +77,7 @@ For the services credentials, refer to [docker-compose.yml](./docker-compose.yml
 
 ### Scrapper Only
 
-You can also build and run the github scrapper independently, for example:
+You can also build and run the GitHub scrapper independently, for example:
 
 ```cmd
 $ cargo run --bin github_scrapper
