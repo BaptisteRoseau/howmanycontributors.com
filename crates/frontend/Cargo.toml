@@ -2,7 +2,8 @@
 name = "frontend"
 version = "1.0.4"
 authors = ["Baptiste Roseau <broseau@gmail.com>"]
-edition = "2024"
+# 2021 because Dioxus 0.5.7 is not compatible with 2024 yet
+edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -21,7 +22,7 @@ reqwest = { version = "0.12.23", features = ["json", "rustls-tls"] }
 serde = "1.0.219"
 thiserror = "2.0.16"
 tracing = "0.1.41"
-web-sys = { version = "0.3.78", features = [
+web-sys = { version = "0.3.80", features = [
     "Window",
     "DomTokenList",
     "Element",

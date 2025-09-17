@@ -7,7 +7,6 @@ RUN cargo install cargo-watch
 ENV CARGO_TARGET_DIR=/build
 VOLUME [ "/mount/repository" ]
 WORKDIR /mount/repository
-WORKDIR /src
 EXPOSE 24316
 
 ENTRYPOINT [ \

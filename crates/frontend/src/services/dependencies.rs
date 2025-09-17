@@ -15,11 +15,12 @@ where
     let mut ws = ServiceWebsocket::new(format!("/dependencies?link={link}").as_str())?;
     ws.set_onmessage(move |e: MessageEvent| {
         if let Ok(message) = e.data().dyn_into::<js_sys::JsString>() {
-            debug!("Received Dependency Chunk: {}", message);
-            if let Some(msg) = message.as_string()
-                && let Ok(chunk) = ContributorsChunk::try_from(msg.as_str()) {
+            debug!("Received dependency chunk: {}", message);
+            if let Some(msg) = message.as_string() {
+                if let Ok(chunk) = ContributorsChunk::try_from(msg.as_str()) {
                     callback(chunk);
                 }
+            }
         }
     });
     Ok(ws)

@@ -1,4 +1,4 @@
-FROM rust:1.88 as BUILDER
+FROM rust:1.88 AS builder
 
 ARG target=x86_64-unknown-linux-gnu
 
@@ -21,9 +21,9 @@ RUN RUSTFLAGS='-C target-feature=+crt-static' \
 
 FROM gcr.io/distroless/static-debian12
 
-COPY --from=BUILDER /opt/backend /backend
-COPY --from=BUILDER /opt/http_health_checker /http_health_checker
-COPY --from=BUILDER /opt/config.yml /etc/backend/config.yml
+COPY --from=builder /opt/backend /backend
+COPY --from=builder /opt/http_health_checker /http_health_checker
+COPY --from=builder /opt/config.yml /etc/backend/config.yml
 USER 10001
 WORKDIR /
 EXPOSE 24316

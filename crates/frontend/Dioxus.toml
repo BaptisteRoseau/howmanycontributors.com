@@ -24,13 +24,13 @@ title = "How Many Contributors"
 reload_html = true
 
 # which files or dirs will be watcher monitoring
-watch_path = ["src", "assets", "input.css", "tailwind.config.js", "dist/tailwind.css"]
+watch_path = ["src", "assets", "input.css", "tailwind.config.js", "dist/style.css"]
 
 # include `assets` in web platform
 [web.resource]
 
 # CSS style file
-style = ["/tailwind.css"]
+style = ["style.css"]
 
 # Javascript code file
 script = []
