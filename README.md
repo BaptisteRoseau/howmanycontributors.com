@@ -71,6 +71,8 @@ cd howmanycontributors.com.git
 docker compose up
 ```
 
+/!\ Currently Dioxus has compilation issues /!\
+
 This will run the debug build, enabling hot reloading to work on both the frontend and the backend. Wait for the build to complete, then run [scripts/open_firefox.debug.sh](scripts/open_firefox.debug.sh) (or open manually your browser if not Firefox on the links in the script).
 
 For the services credentials, refer to [docker-compose.yml](./docker-compose.yml).
