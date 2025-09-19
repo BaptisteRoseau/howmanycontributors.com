@@ -43,7 +43,6 @@ pub(crate) fn public_routes(app_state: &AppState) -> Router {
         .layer(CorsLayer::permissive())
         // Common middlewares
         .layer(NormalizePathLayer::trim_trailing_slash())
-        // .layer(CompressionLayer::new().quality(CompressionLevel::Best))
         .layer(CompressionLayer::new().quality(CompressionLevel::Best))
         .layer(RequestDecompressionLayer::new())
         // Rate Limiting per IP

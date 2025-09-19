@@ -13,3 +13,4 @@ GrafanaDashboard.json
 public
 node_modules
 package.json
+package-lock.json

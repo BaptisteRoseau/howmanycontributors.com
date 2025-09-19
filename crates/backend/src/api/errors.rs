@@ -60,7 +60,6 @@ impl IntoResponse for ApiErrorResponse {
 /// The error message will be logged but not sent in the server response.
 #[derive(Error, Debug)]
 pub(crate) enum ApiError {
-    
     #[error("Hardware Error: {0}")]
     IoError(#[from] std::io::Error),
     #[error(transparent)]
